@@ -1,0 +1,21 @@
+<svg viewBox="0 0 512 512" width="160" height="160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Chat bubble outline -->
+  <path
+    d="M128 420c-18-9-28-21-34-38-5-15-6-32-6-64v-82c0-82 58-138 150-138s150 56 150 138v82c0 32-1 49-6 64-6 17-16 29-34 38s-38 12-74 12H202c-36 0-56-1-74-12z"
+    stroke="#fff"
+    stroke-width="24"
+    fill="none"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Large star -->
+  <path
+    d="M292 242l14 45 45 14-45 14-14 45-14-45-45-14 45-14 14-45z"
+    fill="#fff"
+  />
+  <!-- Small star -->
+  <path
+    d="M366 172l6 20 20 6-20 6-6 20-6-20-20-6 20-6 6-20z"
+    fill="#fff"
+  />
+</svg>

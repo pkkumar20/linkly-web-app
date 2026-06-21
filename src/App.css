@@ -1,0 +1,51 @@
+/* Hide scrollbar for WebKit */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for Firefox */
+.scrollbar-hide {
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE & Edge */
+}
+.cropper-view-box,
+.cropper-face {
+    border-radius: 50% !important;
+}
+
+.cropper-dashed,
+.cropper-point {
+    display: none !important;
+    /* Hide resize handles */
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none !important;
+    height: 0 !important;
+    width: 0 !important;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+}/* Add to your App.css or globals.css */
+@keyframes glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px currentColor;
+    }
+
+    50% {
+        box-shadow: 0 0 20px currentColor;
+    }
+}
+
+.shadow-glow {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4) !important;
+}
+
+.animate-glow {
+    animation: glow 2s ease-in-out infinite;
+}

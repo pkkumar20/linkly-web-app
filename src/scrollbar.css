@@ -1,0 +1,360 @@
+/* src/scrollbar.css */
+
+.scrollbar-telegram {
+    scrollbar-width: thin;
+    /* Firefox */
+    scrollbar-color: rgba(120, 120, 120, 0.4) transparent;
+    /* Ensure programmatic instant scrolls work; smooth is handled via JS when needed */
+    scroll-behavior: auto;
+}
+
+/* Chrome, Edge, Safari */
+.scrollbar-telegram::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+
+.scrollbar-telegram::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollbar-telegram::-webkit-scrollbar-thumb {
+    background-color: rgba(120, 120, 120, 0.4);
+    border-radius: 9999px;
+}
+
+.scrollbar-telegram::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(120, 120, 120, 0.6);
+}
+
+/* ✅ Hide scrollbar buttons */
+.scrollbar-telegram::-webkit-scrollbar-button {
+    display: none !important
+}
+
+/* hide */
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hidden {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+/* Hide scrollbar inside emoji-picker-react completely just like Telegram Web */
+.EmojiPickerReact .epr-body::-webkit-scrollbar {
+    width: 0 !important;
+    background: transparent !important;
+}
+
+.EmojiPickerReact .epr-body {
+    -ms-overflow-style: none !important;
+    /* IE and Edge */
+    scrollbar-width: none !important;
+    /* Firefox */
+    overflow-y: scroll !important;
+    /* Ensure scrolling works even with width 0 */
+}
+
+.EmojiPickerReact .epr-main {
+    overflow: hidden !important;
+}
+
+/* Telegram-style round spinner */
+.tg-spinner {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #5EA5F5;
+    background: rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    animation: tg-spin 0.8s linear infinite;
+}
+
+@keyframes tg-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes msgSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pickerPopIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.animate-picker {
+    animation: pickerPopIn 0.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Custom size for reaction emojis */
+.custom-reactions-container {
+    --epr-emoji-size: 16px !important;
+}
+
+/* Reaction emoji button hover animation */
+.reaction-emoji-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    transition: background-color 0.15s ease;
+}
+
+.reaction-emoji-btn:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+    animation: reactionEmojiPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.5) forwards;
+}
+
+@keyframes reactionEmojiPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.35) rotate(-6deg); }
+    65%  { transform: scale(1.28) rotate(4deg); }
+    85%  { transform: scale(1.3) rotate(-2deg); }
+    100% { transform: scale(1.25) rotate(0deg); }
+}
+
+.tg-ctx-menu {
+    transform: scale(0);
+    opacity: 0;
+}
+
+.tg-ctx-menu-open {
+    animation: tgCtxOpen 150ms cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+.tg-ctx-menu-close {
+    animation: tgCtxClose 120ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes tgCtxOpen {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes tgCtxClose {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+/* ── Context menu body (WhatsApp / Telegram style) ── */
+.ctx-menu-body {
+    margin-top: 6px;
+    background: rgba(229, 229, 234, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    padding: 6px 0;
+    min-width: 170px;
+    overflow: hidden;
+}
+
+.ctx-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 18px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 120ms ease;
+    color: #222;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.ctx-menu-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.ctx-menu-item-danger {
+    color: #e53935;
+}
+
+.ctx-menu-item-danger:hover {
+    background: rgba(229, 57, 53, 0.08);
+}
+
+.ctx-menu-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+}
+
+.ctx-menu-text {
+    flex: 1;
+    white-space: nowrap;
+}
+
+/* ── Clip icon popover menu animation ── */
+.clip-menu {
+    transform: scale(0);
+    opacity: 0;
+}
+
+.clip-menu-open {
+    animation: clipMenuOpen 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.clip-menu-close {
+    animation: clipMenuClose 150ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes clipMenuOpen {
+    0% {
+        transform: scale(0.6);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes clipMenuClose {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.6);
+        opacity: 0;
+    }
+}
+
+/* ── Telegram-style popover card ── */
+.clip-popover-card {
+    min-width: 200px;
+    padding: 5px;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 12px;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.06),
+        0 6px 16px rgba(0, 0, 0, 0.08),
+        0 0 0 0.5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+/* ── Menu item ── */
+.clip-popover-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 9px 14px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 120ms ease;
+    animation: clipItemSlideIn 200ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.clip-popover-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.clip-popover-item:active {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+@keyframes clipItemSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Icon circle ── */
+.clip-popover-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+}
+
+/* ── Label ── */
+.clip-popover-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a1a;
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+}
+
+/* ── Search result highlight flash ── */
+@keyframes searchHighlightFlash {
+    0% {
+        background-color: rgba(51, 144, 236, 0.25);
+    }
+    70% {
+        background-color: rgba(51, 144, 236, 0.12);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.search-highlight-flash {
+    animation: searchHighlightFlash 1.5s ease-out forwards;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
