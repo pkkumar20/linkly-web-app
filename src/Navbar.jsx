@@ -232,7 +232,7 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
   }
 
   const lastMessege = (messegeData, otherMember) => {
-    // console.log(messegeData);
+    // 
 
     if (messegeData.chatType !== "label") {
       if (messegeData.chatType === "image") {
@@ -502,10 +502,10 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
   useEffect(() => {
     if (contacts.length !== 0 && backendUser != null) {
       // Suppose `contacts` is the array received from the backend
-      console.log("contacts", contacts);
+      
 
       const processedContacts = contacts.map(contact => {
-        console.log(contact);
+        
         const otherMembers = contact.members?.filter(
           member => member._id._id !== backendUser._id
         );
@@ -698,7 +698,6 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
                     onTouchMove={handleTouchMove}
                     onClick={() => {
                       if (longPressTriggered.current) return;
-                      window.history.pushState({}, '', `/#${user._id}`);
                       setSelectedChat({ _id: user._id });
                       goToChatArea(user)
                       rstUnread(user._id, backendUser._id)
@@ -792,7 +791,6 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
                     onTouchMove={handleTouchMove}
                     onClick={() => {
                       if (longPressTriggered.current) return;
-                      window.history.pushState({}, '', `/#${user._id}`);
                       setSelectedChat({ _id: user._id });
                       goToChatArea(user)
                       rstUnread(user._id, backendUser._id)
@@ -885,7 +883,6 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
                     onTouchMove={handleTouchMove}
                     onClick={() => {
                       if (longPressTriggered.current) return;
-                      window.history.pushState({}, '', `/#${user._id}`);
                       setSelectedChat({ _id: user._id });
                       goToChatArea(user)
                       rstUnread(user._id, backendUser._id)
@@ -1025,8 +1022,8 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
               transition={{ duration: 0.12, ease: 'easeOut' }}
               style={{
                 position: 'fixed',
-                top: contextMenu.y,
-                left: contextMenu.x,
+                top: Math.max(10, Math.min(contextMenu.y, window.innerHeight - 220)),
+                left: Math.max(10, Math.min(contextMenu.x, window.innerWidth - 280)),
                 zIndex: 9999,
               }}
               className="p-1.5 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-100 min-w-[200px]"

@@ -164,20 +164,20 @@ const MessegeBubble = ({
                             title={`View profile: ${username}`}
                             onClick={(e) => {
                                 if (username === backendUser.username) return;
-                                console.log(username);
+                                
 
 
-                                console.log(contactsWithOtherMember);
+                                
                                 const existingContact = contactsWithOtherMember.find(contact => {
                                     if (contact.contactType === "person" && contact.otherMember[0]._id.username === username) {
                                         return contact;
                                     }
                                 })
-                                console.log(existingContact);
+                                
                                 if (existingContact !== undefined) {
                                     window.dispatchEvent(new CustomEvent('navigate-to-chat', { detail: { contact: existingContact } }));
                                 } else {
-                                    console.log("mnn");
+                                    
 
                                     e.stopPropagation();
                                     navigate(`/${username}`);
@@ -207,7 +207,7 @@ const MessegeBubble = ({
 
                                 if (contactId === chat._id) return;
 
-                                console.log(contactId);
+                                
 
 
                                 const existingContact = contactsWithOtherMember.find(contact => {
@@ -215,11 +215,11 @@ const MessegeBubble = ({
                                         return contact;
                                     }
                                 })
-                                console.log(existingContact);
+                                
                                 if (existingContact !== undefined) {
                                     window.dispatchEvent(new CustomEvent('navigate-to-chat', { detail: { contact: existingContact } }));
                                 } else {
-                                    console.log("mnn");
+                                    
 
                                     e.stopPropagation();
                                     navigate(`/+${contactId}`);
@@ -501,7 +501,7 @@ const MessegeBubble = ({
                     // const contactProfile = msg.contactDetails?.Id;
 
                     const contactInitial = (msg.contactDetails?.name || '?').charAt(0).toUpperCase();
-                    console.log(msg.forContact + " " + chat._id)
+                    
                     return (
                         <div className="px-3 pt-2.5 pb-1 flex flex-col">
                             <div className="flex items-center gap-3">

@@ -76,7 +76,7 @@ function OtpInput({ phone, onBack }) {
         if (otp.length == 6) {
             setIsLoading(true)
             window.confirmationResult.confirm(otp).then(async (res) => {
-                console.log(res);
+                
                 setIsLoading(false);
                 toast.success("Loged in sucessfully")
             }).catch((err) => {

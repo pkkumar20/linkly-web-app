@@ -55,7 +55,7 @@ export default function Notifaction({ Choose }) {
         return n.status === activeTab;
     });
     const handleApprove = async (contactId, notifiactionId) => {
-        console.log(contactId, notifiactionId);
+        
 
         const res = await approveInvite(contactId, notifiactionId);
         if (res.status === 200) {

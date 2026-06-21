@@ -129,7 +129,7 @@ export default function AddMembers({ Choose, handler, members, loading }) {
     useEffect(() => {
         if (contacts.length !== 0 && backendUser != null) {
             const personContacts = contacts.filter(contact => contact.contactType === "person");
-            console.log(personContacts);
+            
             // Suppose `contacts` is the array received from the backend
             const processedContacts = personContacts.map(contact => {
                 const otherMembers = contact.members.filter(

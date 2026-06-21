@@ -17,7 +17,7 @@ export default function LeaveGroupPopUp({ onShare, isOpen, onClose, onSendInvite
     const isOwner = chat.owner.toString() === backendUser._id.toString();
     const handleLeave = async () => {
         const fd = new FormData();
-        console.log(chat._id);
+        
         
         fd.append("groupId", chat._id);
         if (isOwner) {

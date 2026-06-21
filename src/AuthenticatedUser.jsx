@@ -233,14 +233,14 @@ function AuthenticatedUser() {
     // "messages"
     const chatId = params.get('chatId');  // "abc123"
 
-    console.log(userID);
-    console.log(groupId);
-    console.log(chatId);
+
+
+
 
     if (userID) {
 
       const handleAddContact = async () => {
-        console.log(userID);
+
 
         const fd = new FormData();
         fd.append("id", userID);
@@ -301,8 +301,10 @@ function AuthenticatedUser() {
         const contactId = hashData.substring(1);
         handleChat(contactId);
         setSelectedContactId(contactId);
+        setDirection("forward");
         setActiveChat(true);
       } else {
+        setDirection("back");
         setSelectedContactId(null);
         setSelectedChat(null);
         setActiveChat(false);
@@ -337,14 +339,14 @@ function AuthenticatedUser() {
   // ✅ Add this useEffect (key fix!)
   useEffect(() => {
     if (selectedContactId && contacts.length > 0) {
-      console.log("🔄 Syncing selectedChat with fresh contacts...");
+
 
       // ✅ Find FRESH contact data
       const freshContact = findContact(selectedContactId);
 
       if (freshContact) {
-        console.log("✅ Updated selectedChat:", freshContact);
-        console.log("✅ Updated selectedChat:", freshContact.otherMembers);
+
+
 
 
         setSelectedChat(freshContact);
@@ -356,13 +358,13 @@ function AuthenticatedUser() {
   const handleInputPress = (next, ChatData = null, extraData = null, redirectData = null, redirectData2 = null, autoChatSendData = null, forwardData = null) => {
 
     if (next === "Chat" && autoChatSendData && ChatData) {
-      console.log(ChatData)
+
       // UpdateSelecetdChat(ChatData)
       setSelectedContactId(ChatData._id)
       setSelectedChat(ChatData);
       setAutoSendChat(autoChatSendData)
       if (forwardData) {
-        console.log(forwardData);
+
         setForwardMessagesData(forwardData);
       }
 
@@ -378,7 +380,7 @@ function AuthenticatedUser() {
       // UpdateSelecetdChat(ChatData);
       setSelectedChat(ChatData);
       if (forwardData) {
-        console.log(forwardData);
+
 
         setForwardMessagesData(forwardData);
       }
@@ -407,7 +409,7 @@ function AuthenticatedUser() {
         const otherMembers = redirectData2.members.filter((member) => member._id._id.toString() !== backendUser._id.toString());
         redirectData2.otherMember = otherMembers;
       }
-      console.log(redirectData2);
+
       handleChat(redirectData2._id);
 
       setSelectedContactId(redirectData2._id)
@@ -429,7 +431,7 @@ function AuthenticatedUser() {
 
 
     if (next === "AddMemberForChanel" && redirectData) {
-      console.log(redirectData);
+
       setSelectedContactId(redirectData._id)
       setSelectedChat(redirectData)
       setActiveChat(true);
@@ -466,7 +468,7 @@ function AuthenticatedUser() {
           const otherMembers = contact.members.filter((member) => member._id._id.toString() !== backendUser._id.toString());
           contact.otherMember = otherMembers;
         }
-        console.log(contact)
+
         handleInputPress("Chat", contact);
       }
     };
@@ -482,7 +484,7 @@ function AuthenticatedUser() {
         autoChatSendData={autoSendChat}
         resetAutoSentChat={(data) => {
           setAutoSendChat("")
-          console.log(data);
+
 
         }}
         choose={handleInputPress}
@@ -516,23 +518,21 @@ function AuthenticatedUser() {
 
 
   const handleBackFromChat = () => {
+    console.log("back from chat");
     setActiveChat(false);
     window.history.pushState({}, '', `/`);
   };
   const variants = {
     initial: (dir) => ({
       x: dir === "forward" ? "100%" : "-100%",
-      opacity: 0,
     }),
     animate: {
       x: 0,
-      opacity: 1,
-      transition: { duration: 0.3, ease: "easeInOut" },
+      transition: { duration: 0.25, ease: "easeOut" },
     },
     exit: (dir) => ({
       x: dir === "forward" ? "-100%" : "100%",
-      opacity: 0,
-      transition: { duration: 0.3, ease: "easeInOut" },
+      transition: { duration: 0.25, ease: "easeOut" },
     }),
     fadeInitial: { opacity: 0 },
     fadeAnimate: {
@@ -553,12 +553,12 @@ function AuthenticatedUser() {
   };
   const handleJoin = async (data) => {
     setLoading(true);
-    console.log(data)
+
     if (data.contactType === "channel") {
 
 
       const res = await joinChanelByInvite(data._id);
-      console.log(res);
+
       if (res.status === 200) {
         const contactWithOtherMembers = () => {
           const contact = res.data.contact;
@@ -648,12 +648,13 @@ function AuthenticatedUser() {
             {activeChat && (
               <motion.div
                 key="chat"
-                custom='forward'
+                custom={direction}
                 variants={variants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
                 className="absolute w-full h-full"
+                style={{ willChange: "transform", zIndex: 50 }}
               >
                 <ChatArea
                   choose={handleInputPress}
@@ -666,19 +667,13 @@ function AuthenticatedUser() {
                   isNavbarHidden={activeChat && isSmMd}
                   resetAutoSentChat={(data) => {
                     setAutoSendChat("")
-                    console.log(data);
+
 
                   }}
                   back={() => {
                     setDirection("back");
-                    setAnimating(true);
                     window.history.pushState({}, '', `/`);
-                    setTimeout(() => {
-                      setActiveChat(false);
-                      setCurrent("Home");
-                      setPrev("Chat");
-                      setAnimating(false);
-                    }, 10);
+                    setActiveChat(false);
                   }}
                 />
               </motion.div>
@@ -686,7 +681,7 @@ function AuthenticatedUser() {
           </AnimatePresence>
         ) : (
           <ChatArea isChatSelected={isChatSelected} chat={selectedChat} contactData={selectedChat} back={handleBackFromChat} choose={handleInputPress} autoChatSendData={autoSendChat} forwardMessagesData={forwardMessagesData} setForwardMessagesData={setForwardMessagesData} isNavbarHidden={activeChat && isSmMd} resetAutoSentChat={(data) => {
-            console.log(data)
+
             setAutoSendChat("")
           }} />
         )}

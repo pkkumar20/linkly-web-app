@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import UserAvatar2 from "./UserAvatar2";
 import { Spinner } from "@material-tailwind/react";
 export default function JoinPopUp({ isOpen, onJoin, onClose, profilePicture, contactData, loading, setLoading }) {
-    console.log(contactData);
+    
     const [isAnimating, setIsAnimating] = useState(false);
 
     useEffect(() => {

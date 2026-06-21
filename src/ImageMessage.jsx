@@ -361,7 +361,7 @@ const ImageMessage = memo(({ choose, msg, chat, images, isPending, senderName, i
                         senderName={senderName}
                         senderProfile={senderProfile}
                         sendTime={sendTime}
-                        returnData={(w) => console.log(w)}
+                        returnData={(w) => {}}
                     />
                 )}
             </div>
@@ -459,7 +459,7 @@ const ImageMessage = memo(({ choose, msg, chat, images, isPending, senderName, i
                     senderName={senderName}
                     senderProfile={senderProfile}
                     sendTime={sendTime}
-                    returnData={(w) => console.log(w)}
+                    returnData={(w) => {}}
                 />
             )}
         </div>

@@ -57,7 +57,7 @@ function NewGroupFinalPage({ Choose, members }) {
     useEffect(() => {
         if (members.length > 0) {
             const ids = members.map(member => member.otherMember[0]._id._id);
-            console.log(ids);
+            
             setMembersId(ids);
         }
     }, [members])
@@ -67,7 +67,7 @@ function NewGroupFinalPage({ Choose, members }) {
     };
     const handleFabClick = async () => {
         try {
-            console.log(selectedEmoji);
+            
             selectedEmoji
             setDisabled(true)
             setLoading(true)
@@ -121,7 +121,7 @@ function NewGroupFinalPage({ Choose, members }) {
             }
         }
     };
-    console.log(membersId)
+    
     return (
         <div
             id="scrollable-content"
@@ -143,7 +143,7 @@ function NewGroupFinalPage({ Choose, members }) {
                     handleFileChange(file)
                     setSelectedEmoji(null)
                 }} onEmojiSelect={(e) => {
-                    console.log(e);
+                    
 
                     setSelectedEmoji(e)
                     setSelectedFile(null);

@@ -10,6 +10,7 @@ export default function LocationViewer({ msg, onClose }) {
     const coords = msg.locationDetails?.coordinates;
     const [longitude, latitude] = coords || [-122.4, 37.8];
     const [phase, setPhase] = useState('mounting');
+    const isHistoryPushedRef = useRef(false);
     const [routesData, setRoutesData] = useState([]);
     const [activeRouteIndex, setActiveRouteIndex] = useState(0);
     const [isLoadingRoute, setIsLoadingRoute] = useState(false);
@@ -36,11 +37,55 @@ export default function LocationViewer({ msg, onClose }) {
         return () => cancelAnimationFrame(raf);
     }, []);
 
+    // Push history state on mount for browser back button support
+    useEffect(() => {
+        if (!isHistoryPushedRef.current) {
+            isHistoryPushedRef.current = true;
+            window.history.pushState(
+                { locationViewerOpen: true },
+                '',
+                window.location.pathname + window.location.hash + (window.location.href.includes('?') ? '&' : '?') + 'location=true'
+            );
+        }
+    }, []);
+
     const triggerClose = useCallback(() => {
         if (phase === 'closing') return;
         setPhase('closing');
-        setTimeout(onClose, 250);
+        // Pop history state if we pushed it
+        if (isHistoryPushedRef.current) {
+            isHistoryPushedRef.current = false;
+            if (window.history.state?.locationViewerOpen) {
+                window.history.back();
+            }
+        }
+        setTimeout(onClose, 120);
     }, [phase, onClose]);
+
+    // Listen for browser back button
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (isHistoryPushedRef.current && !e.state?.locationViewerOpen) {
+                isHistoryPushedRef.current = false;
+                if (phase !== 'closing') {
+                    setPhase('closing');
+                    setTimeout(onClose, 120);
+                }
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [onClose, phase]);
+
+    // Cleanup history on unmount if still pushed
+    useEffect(() => {
+        return () => {
+            if (isHistoryPushedRef.current && window.history.state?.locationViewerOpen) {
+                isHistoryPushedRef.current = false;
+                window.history.back();
+            }
+        };
+    }, []);
 
     useEffect(() => {
         const onKey = (e) => {
@@ -250,7 +295,9 @@ export default function LocationViewer({ msg, onClose }) {
     return createPortal(
         <div className="loc-viewer-overlay" style={{
             opacity: isOpen ? 1 : isClosing ? 0 : 0,
-        }}>
+        }}
+            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        >
             <style>{`
                 .loc-viewer-overlay {
                     position: fixed;
@@ -261,7 +308,7 @@ export default function LocationViewer({ msg, onClose }) {
                     -webkit-backdrop-filter: blur(24px);
                     display: flex;
                     flex-direction: column;
-                    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
                 }
                 .loc-viewer-header {
                     height: 70px;

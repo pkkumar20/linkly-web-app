@@ -12,7 +12,7 @@ import { AuthContext } from "./firebase hooks/AuthContext";
 import getColor from "../src/helper/getColor"
 import toast from "react-hot-toast";
 function AddMemberForChanel({ Choose, rdData }) {
-    console.log(rdData);
+    
 
     const [channelData, setChannelData] = useState(rdData);
     const { addMemberInChanel, contacts } = useContext(AuthContext);
@@ -48,7 +48,7 @@ function AddMemberForChanel({ Choose, rdData }) {
             if (res.status == 200) {
                 setLoading(false);
                 toast.success("Member added successfully")
-                console.log("hello", res.data);
+                
 
                 Choose("Home", null, null, null, res.data.contact)
             } else if (res.status == 409) {
@@ -64,14 +64,14 @@ function AddMemberForChanel({ Choose, rdData }) {
     useEffect(() => {
         if (contacts !== null) {
             const contactData = contacts.find((contact) => contact._id.toString() === rdData._id.toString());
-            console.log(contactData)
+            
             setChannelData(contactData)
         }
     }, [contacts, rdData])
     useEffect(() => {
         const executeAdd = async () => {
             if (isFabPressed === true) {
-                console.log(members);
+                
                 if (members.length > 0) {
                     await handleAdd();
                 } else {

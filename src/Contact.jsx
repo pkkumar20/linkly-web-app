@@ -18,7 +18,7 @@ import toast from "react-hot-toast";
 
 function Contact({ Choose, inputRef }) {
     const { contacts, backendUser } = useContext(AuthContext);
-    console.log("contacts", contacts)
+    
     const ContactsWithOtherMember = () => {
         const foundContacts = contacts.filter(contact => contact.contactType === "person").map((contact) => {
             const otherMember = contact.members?.filter(
@@ -30,7 +30,7 @@ function Contact({ Choose, inputRef }) {
                 lastMessage: contact.lastMessage
             };
         })
-        console.log(foundContacts);
+        
 
         return foundContacts;
 
@@ -41,7 +41,7 @@ function Contact({ Choose, inputRef }) {
         const contactData = ContactsWithOtherMember();
 
         const shortedContacts = contactData.sort((a, b) => {
-            console.log(a, b)
+            
             return a.otherMember[0]._id.lastSeen.localeCompare(b.otherMember[0]._id.lastSeen)
         })
         setContactsData(shortedContacts);
@@ -57,7 +57,7 @@ function Contact({ Choose, inputRef }) {
             return displayName.toLowerCase().includes(keyWord.toLowerCase());
         })
     }
-    console.log(filtered);
+    
     function formatLastSeen(isoDate) {
         const lastSeenDate = new Date(isoDate);
         const now = new Date();
@@ -410,7 +410,7 @@ function AddContactPopup({ isOpen, onClose }) {
             const fd = new FormData();
             fd.append("phone", "+91" + phone);
             const res = await addContact(fd);
-            console.log(res);
+            
             if (res.status === 200) {
                 handleClose();
                 toast.success("Contact added sucessfully")
@@ -435,7 +435,7 @@ function AddContactPopup({ isOpen, onClose }) {
             const res = await getUserDetailsForContact(fd);
             if (res.status === 200) {
                 setUserData(res.data.user.profile)
-                console.log(res.data.user.name)
+                
                 setName(res.data.user.name);
                 setLastName(res.data.user.lastName);
                 setLoading(false);
@@ -542,7 +542,7 @@ function AddContactPopup({ isOpen, onClose }) {
                                     maxLength={10}
                                     onChange={(e) => {
                                         if (/^\d{0,10}$/.test(e.target.value)) {
-                                            console.log(userData);
+                                            
 
                                             setPhone(e.target.value);
                                             setUserData(null);
@@ -551,7 +551,7 @@ function AddContactPopup({ isOpen, onClose }) {
 
 
                                         }
-                                        // console.log(e.target.value)
+                                        // 
                                         if (e.target.value.length == 10) {
                                             handleGetDetails(e.target.value);
                                         }

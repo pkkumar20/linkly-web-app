@@ -17,7 +17,7 @@ export default function AddAdminsPopUp({ onShare, isOpen, onClose, onSendInviteL
     const { contacts, backendUser } = useContext(AuthContext);
      const [userContacts, setUserContacts] = useState([])
   const [shortedContacts, setShortedContacts] = useState([])
-  console.log(shortedContacts);
+  
   
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");

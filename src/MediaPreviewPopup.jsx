@@ -394,6 +394,71 @@ export default function MediaPreviewPopup({ files = [], source, onClose, onSend,
     const popupRef = useRef(null);
     const emojiTimer = useRef(null);
     const addInputRef = useRef(null);
+    const emojiContainerRef = useRef(null);
+
+    const isPreviewPushedRef = useRef(false);
+
+    // Sync preview open state with history to support browser back button
+    useEffect(() => {
+        if (!isPreviewPushedRef.current) {
+            isPreviewPushedRef.current = true;
+            window.history.pushState(
+                { mediaPreviewOpen: true }, 
+                '', 
+                window.location.pathname + window.location.hash + (window.location.href.includes('?') ? '&' : '?') + 'preview=true'
+            );
+        }
+    }, []);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (isPreviewPushedRef.current && !e.state?.mediaPreviewOpen) {
+                isPreviewPushedRef.current = false;
+                onClose();
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [onClose]);
+
+    useEffect(() => {
+        return () => {
+            if (isPreviewPushedRef.current && window.history.state?.mediaPreviewOpen) {
+                isPreviewPushedRef.current = false;
+                window.history.back();
+            }
+        };
+    }, []);
+
+    const handleClose = () => {
+        if (isPreviewPushedRef.current) {
+            isPreviewPushedRef.current = false;
+            if (window.history.state?.mediaPreviewOpen) {
+                window.history.back();
+            }
+        }
+        onClose();
+    };
+
+    const handleEmojiToggle = (e) => {
+        e.stopPropagation();
+        setShowEmoji(prev => !prev);
+    };
+
+    const handleMouseEnter = () => {
+        const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (!isTouch) {
+            clearTimeout(emojiTimer.current);
+            setShowEmoji(true);
+        }
+    };
+
+    const handleMouseLeave = () => {
+        const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (!isTouch) {
+            emojiTimer.current = setTimeout(() => setShowEmoji(false), 300);
+        }
+    };
 
     const MAX_FILE_SIZE = 30 * 1024 * 1024; // 30 MB
 
@@ -438,6 +503,22 @@ export default function MediaPreviewPopup({ files = [], source, onClose, onSend,
         setPreviewUrls(urls);
         return () => Object.values(urls).forEach(u => URL.revokeObjectURL(u));
     }, [fileList]);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (emojiContainerRef.current && !emojiContainerRef.current.contains(e.target)) {
+                setShowEmoji(false);
+            }
+        };
+        if (showEmoji) {
+            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('touchstart', handleClickOutside);
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+                document.removeEventListener('touchstart', handleClickOutside);
+            };
+        }
+    }, [showEmoji]);
 
     if (!fileList.length) return null;
 
@@ -484,7 +565,7 @@ export default function MediaPreviewPopup({ files = [], source, onClose, onSend,
     const handleSend = () => onSend(fileList, caption);
     const handleRemove = (index) => {
         const next = fileList.filter((_, i) => i !== index);
-        if (!next.length) { onClose(); return; }
+        if (!next.length) { handleClose(); return; }
         setFileList(next);
         // Also inform parent if possible, but component uses its own state for now.
     };
@@ -555,7 +636,7 @@ export default function MediaPreviewPopup({ files = [], source, onClose, onSend,
 
                 {/* ── Header ─────────────────────────────────────────────── */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px 10px', flexShrink: 0, borderBottom: '1px solid #f0f0f0' }}>
-                    <button onClick={onClose}
+                    <button onClick={handleClose}
                         style={{ width: 32, height: 32, borderRadius: '50%', background: '#f5f5f5', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', flexShrink: 0 }}>
                         <MdClose size={20} />
                     </button>
@@ -608,10 +689,14 @@ export default function MediaPreviewPopup({ files = [], source, onClose, onSend,
                     background: '#ffffff', flexShrink: 0,
                     borderTop: '1px solid #f0f0f0',
                 }}>
-                    <div className="relative"
-                        onMouseEnter={() => { clearTimeout(emojiTimer.current); setShowEmoji(true); }}
-                        onMouseLeave={() => { emojiTimer.current = setTimeout(() => setShowEmoji(false), 300); }}>
-                        <button style={{ width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="relative" ref={emojiContainerRef}
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}>
+                        <button 
+                            type="button" 
+                            onClick={handleEmojiToggle} 
+                            style={{ width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
                             <BiWinkSmile size={24} />
                         </button>
                         <AnimatePresence>

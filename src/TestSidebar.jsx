@@ -87,7 +87,7 @@ export default function Sidebar({ Choose }) {
   useEffect(() => {
     const gt = async () => {
       let data = await getorsetProfile();
-      console.log(data);
+      
     }
     gt()
 

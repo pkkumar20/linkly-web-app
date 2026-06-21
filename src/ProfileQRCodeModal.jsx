@@ -317,7 +317,7 @@ export default function ProfileQRCodeModal({ isOpen, onClose }) {
 
             if (sendBulkQrImage) {
                 const res = await sendBulkQrImage(fd);
-                console.log(res);
+                
                 if (res.status === 200) {
                     setShowContactPicker(false);
                     setSelectedContacts([]);

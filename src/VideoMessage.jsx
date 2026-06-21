@@ -216,7 +216,7 @@ const VideoTile = ({ thumb, isLoading, isPending, isError, onClick, className, s
 const VideoMessage = memo(({ choose, msg, chat, videos, isPending, isSent, senderName, senderProfile, sendTime, caption, formattedTime, hasOtherIds }) => {
     const hasCaption = caption && caption.trim().length > 0;
     const isError = msg?._isError;
-    console.log(msg);
+    
 
     const renderTextWithLinks = (textContent) => {
         if (!textContent) return null;

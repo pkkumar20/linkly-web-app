@@ -10,7 +10,7 @@ const LinkCard = ({ senderData, sender, time, avatar, contentLines, onContextMen
         'text-blue-600', 'text-indigo-600', 'text-purple-600', 'text-pink-600',
         'text-rose-600', 'text-orange-600', 'text-emerald-600', 'text-teal-600'
     ];
-    console.log(senderData);
+    
 
     const charCode = avatar ? avatar.charCodeAt(0) : 0;
     const colorIndex = charCode % colors.length;

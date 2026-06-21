@@ -147,7 +147,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
 
         }
         // getIntial(value);
-        // console.log(intinal);
+        // 
 
         const changed = value.length > 0;
         setShowFab(changed);
@@ -166,7 +166,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
     }, [groupName, file, emoji, chatData.name]);
     useState(() => {
         if (rdScreen.length > 0) {
-            console.log("working")
+            
         }
     })
     useEffect(() => {
@@ -193,7 +193,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
         exit: { x: "100%" }          // Slide out right (closing)
     };
     const handleFabClick = async () => {
-        console.log("clicked");
+        
 
         try {
             setLoading(true)
@@ -224,7 +224,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                 fd.append("groupId", chatData._id);
                 const res = await updateGroupInfo(fd);
                 if (res.status === 200) {
-                    console.log(res);
+                    
 
                     setLoading(false);
                     onPress(false)
@@ -234,7 +234,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                 fd.append("channelId", chatData._id);
                 const res = await profileUpdateinChanel(fd);
                 if (res.status === 200) {
-                    console.log(res);
+                    
 
                     setLoading(false);
                     onPress(false)
@@ -299,7 +299,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                                             profileType: 'undefined'
                                         })}
 
-                                        isChanged={e => console.log(e)}
+                                        isChanged={e => {}}
                                         isprofile={false}
                                         disabled={loading}
                                         onFileSelect={(file) => {
@@ -548,7 +548,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                                 >
                                     <div style={{ pointerEvents: 'auto' }}>
                                         <LeaveGroupPopUp
-                                            onShare={(chatId, userId) => console.log(chatId, userId)}
+                                            onShare={(chatId, userId) => {}}
                                             chat={chatData}
                                             isOpen={popupOpen}
                                             onClose={() => setPopupOpen(false)}

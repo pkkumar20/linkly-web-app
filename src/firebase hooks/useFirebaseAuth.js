@@ -24,7 +24,7 @@ function useFirebaseAuth() {
   const [selctedContact, setSelectedContact] = useState(null);
   // ✅ FIXED REDUCER: Proper chat creation + move to top logic
   const serverUrl = import.meta.env.VITE_SERVER_URL;
-  console.log(serverUrl);
+  
 
   const recentChatsReducer = (state, action) => {
     switch (action.type) {
@@ -138,7 +138,7 @@ function useFirebaseAuth() {
 
   // ✅ Safe socket connection
   async function connectSocket() {
-    console.log(backendUser);
+    
 
     const user = auth.currentUser;
     if (!user) throw new Error("Not logged in");
@@ -249,7 +249,7 @@ function useFirebaseAuth() {
     });
     return () => unsubscribe();
   }, []);
-  console.log(currentChatData);
+  
 
   // --- EFFECT 2: SOCKET CONNECTION (DEPENDS ON BACKEND USER) ---
   useEffect(() => {
@@ -264,18 +264,18 @@ function useFirebaseAuth() {
           setSocket(currentSocket);
 
           currentSocket.on("connect", () => {
-            console.log("✅ Socket Connected via BackendUser Trigger");
+            
             refetchRecentChats();
           });
 
           currentSocket.on("receiveMessage", handleMessageCreted);
           currentSocket.on("messageCreted", (data, chatId) => {
-            console.log("messageCreated", data);
+            
             handleMessageCreted(data, chatId);
           });
 
           currentSocket.on("messageUp", (message, id) => {
-            console.log("messageUp received", message._id, "images:", message.images?.length, "id:", id);
+            
             dispatchRecentChats({
               type: "ADD_UPDATE_MESSAGE",
               chatId: id.id,
@@ -311,10 +311,10 @@ function useFirebaseAuth() {
 
                 // If the chat list is empty OR the message belongs to the current chat, append it
                 if (!currentContactId || !msgContactId || currentContactId === msgContactId) {
-                  console.log("messageUp: NOT FOUND — appending to current chat", msgId);
+                  
                   return [...prev, message].sort((a, b) => new Date(a.time) - new Date(b.time));
                 } else {
-                  console.log("messageUp: NOT FOUND — belongs to different chat, ignoring", msgId);
+                  
                 }
               }
 
@@ -324,7 +324,7 @@ function useFirebaseAuth() {
 
 
           currentSocket.on("messageUpdated", (data, id) => {
-            console.log("messageUpdated", data);
+            
             dispatchRecentChats({
               type: "UPDATE_MESSAGES_BY_CHAT",
               chatId: id.id,
@@ -348,7 +348,7 @@ function useFirebaseAuth() {
           });
 
           currentSocket.on("oneMessageUpdated", (data, id) => {
-            console.log("messageUpdated", data, id);
+            
             dispatchRecentChats({
               type: "UPDATE_ONE_MESSAGE",
               chatId: id.id,
@@ -358,7 +358,7 @@ function useFirebaseAuth() {
           });
 
           currentSocket.on("userStatusUpdate", (data) => {
-            console.log("userStatusUpdate");
+            
 
             if (data.data) {
               setBackendUser(data.data);
@@ -368,7 +368,7 @@ function useFirebaseAuth() {
           });
 
           currentSocket.on("userUpdated", (data) => {
-            console.log("userUpdated", data);
+            
             setBackendUser(data);
             setContacts(data.contacts || []);
             setNotifiaction(data.notifiaction || []);
@@ -396,7 +396,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("MemberPermissionUpdated", (data) => {
-            console.log("MemberPermissionUpdated");
+            
             setContacts((prev) =>
               prev.map((item) =>
                 item._id.toString() === data._id.toString()
@@ -406,7 +406,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("channelUpdated", (data) => {
-            console.log("channelUpdated", data);
+            
             setContacts((prev) =>
               prev.map((item) =>
                 item._id.toString() === data._id.toString()
@@ -416,7 +416,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("groupUpdated", (data) => {
-            console.log("groupUpdated", data);
+            
 
             setContacts((prev) =>
               prev.map((item) =>
@@ -427,7 +427,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("personUpdated", (data) => {
-            console.log("groupUpdated", data);
+            
 
             setContacts((prev) =>
               prev.map((item) =>
@@ -438,7 +438,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("contactUpdated", (data) => {
-            console.log("contactUpdated", data);
+            
 
             setContacts((prev) =>
               prev.map((item) =>
@@ -449,7 +449,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("notificationUpdated", (data) => {
-            console.log("notificationUpdated", data);
+            
             setNotifiaction((prev) =>
               prev.map((item) =>
                 item._id.toString() === data._id.toString()
@@ -459,13 +459,13 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("notificationDeleted", (data) => {
-            console.log("notificationDeleted", data);
+            
             setNotifiaction((prev) =>
               prev.filter((item) => item._id.toString() !== data.toString()),
             );
           });
           currentSocket.on("contactAdded", (data) => {
-            console.log("contactAdded", data);
+            
 
             setContacts((prev) => {
               // 1. Check if the contact already exists in the list
@@ -487,7 +487,7 @@ function useFirebaseAuth() {
             refetchRecentChats();
           });
           currentSocket.on("notification", (data) => {
-            console.log("notification", data);
+            
             setNotifiaction((prev) => {
               // 1. Check if the contact already exists in the list
               const notificationExists = prev.some(
@@ -539,12 +539,12 @@ function useFirebaseAuth() {
   //           setSocket(currentSocket);
 
   //           currentSocket.on("connect", async () => {
-  //             console.log("✅ Socket connected");
+  //             
   //             await refetchRecentChats();
   //           });
 
   //           currentSocket.on("disconnect", () => {
-  //             console.log("❌ Socket disconnected");
+  //             
   //           });
 
   //           currentSocket.on("connect_error", (err) => {
@@ -552,15 +552,15 @@ function useFirebaseAuth() {
   //           });
 
   //           currentSocket.on("receiveMessage", handleMessageCreted, () => {
-  //             console.log("receiveMessage");
+  //             
   //           });
   //           currentSocket.on("messageCreted", handleMessageCreted, () => {
-  //             console.log("receiveMessage");
+  //             
   //           });
   //           // currentSocket.on("messageUp", handleMessageCreted);
 
   //           currentSocket.on("messageUp", (message, id) => {
-  //             console.log("messageUp");
+  //             
   //             dispatchRecentChats({
   //               type: "ADD_UPDATE_MESSAGE",
   //               chatId: id.id,
@@ -583,8 +583,8 @@ function useFirebaseAuth() {
   //             setContacts(data.contacts || []);
   //           });
   //           currentSocket.on("permissionUpdated", (data) => {
-  //             console.log("permissionUpdated");
-  //             console.log(data._id);
+  //             
+  //             
   //             setContacts((prev) =>
   //               prev.map((item) =>
   //                 item._id.toString() === data._id.toString()
@@ -594,7 +594,7 @@ function useFirebaseAuth() {
   //             );
   //           });
   //           currentSocket.on("adminsUpdated", (data) => {
-  //             console.log("adminsUpdated");
+  //             
   //             setContacts((prev) =>
   //               prev.map((item) =>
   //                 item._id.toString() === data._id.toString()
@@ -605,7 +605,7 @@ function useFirebaseAuth() {
   //           });
 
   //           currentSocket.on("messageUpdated", (data, id) => {
-  //             console.log("📨 messageUpdated - chatId:", id, "messages:", data);
+  //             
 
   //             // ✅ Dispatch COMPLETE messages for this chatId
   //             dispatchRecentChats({
@@ -618,7 +618,7 @@ function useFirebaseAuth() {
   //           });
 
   //           currentSocket.on("groupCreated", (data) => {
-  //             console.log("groupCreated", data);
+  //             
 
   //             setContacts((prev) => [...prev, data]);
   //           });
@@ -1157,8 +1157,8 @@ function useFirebaseAuth() {
   const blockPerson = async (contactId, blockedUserId) => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      console.log(contactId);
-      console.log(blockedUserId);
+      
+      
 
       const res = await axios.post(
         `${serverUrl}/person/block`,
@@ -1571,7 +1571,7 @@ function useFirebaseAuth() {
     }
   };
   const deleteOneFile = async (messageId, contactId, fileId, type) => {
-    // console.log(messageId, contactId, fileId, type);
+    // 
     try {
       const token = await auth.currentUser?.getIdToken();
       const res = await axios.post(
@@ -1892,7 +1892,7 @@ function useFirebaseAuth() {
         },
       );
       if (res.status === 200) {
-        console.log(res);
+        
         return res;
       }
       return res;
@@ -1914,7 +1914,7 @@ function useFirebaseAuth() {
         },
       );
       if (res.status === 200) {
-        console.log(res);
+        
         return res;
       }
       return res;

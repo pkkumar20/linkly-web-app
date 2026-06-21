@@ -60,6 +60,19 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     const [calendarViewDate, setCalendarViewDate] = useState(new Date());
     const [tempSelectedDate, setTempSelectedDate] = useState(new Date());
     const [selectedUserFilter, setSelectedUserFilter] = useState(null);
+    
+    // Performance optimization: only render latest messages during slide-in animation
+    const [isAnimating, setIsAnimating] = useState(window.innerWidth < 1024);
+    useEffect(() => {
+        const isMobile = window.innerWidth < 1024;
+        if (isMobile) {
+            setIsAnimating(true);
+            const timer = setTimeout(() => setIsAnimating(false), 350);
+            return () => clearTimeout(timer);
+        } else {
+            setIsAnimating(false);
+        }
+    }, [contactData?._id]);
     useEffect(() => {
         setSearchQuery("");
         setHighlightDate("");
@@ -67,6 +80,45 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         setShowCalendar(false);
         setSelectedUserFilter(null);
     }, [contactData?._id]);
+
+    const isInfoPushedRef = useRef(false);
+
+    // Sync panelOpen state with history to support browser back button
+    useEffect(() => {
+        if (panelOpen) {
+            if (!isInfoPushedRef.current) {
+                isInfoPushedRef.current = true;
+                window.history.pushState({ infoOpen: true }, '', window.location.pathname + window.location.hash + "?info=true");
+            }
+        } else {
+            if (isInfoPushedRef.current) {
+                isInfoPushedRef.current = false;
+                if (window.history.state?.infoOpen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [panelOpen]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (panelOpen && !e.state?.infoOpen) {
+                isInfoPushedRef.current = false;
+                setPanelOpen(false);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [panelOpen]);
+
+    useEffect(() => {
+        return () => {
+            // Clean up history state if unmounted while panel is open
+            if (isInfoPushedRef.current && window.history.state?.infoOpen) {
+                window.history.back();
+            }
+        };
+    }, []);
 
     const [chat, setChat] = useState(contactData);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -127,6 +179,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     };
 
     const displayedMessages = useMemo(() => {
+        if (isAnimating) return [];
         let filtered = messages;
         if (selectedUserFilter) {
             const filterUserId = selectedUserFilter._id?.toString();
@@ -136,7 +189,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
             });
         }
         return filtered;
-    }, [messages, selectedUserFilter]);
+    }, [messages, selectedUserFilter, isAnimating]);
 
     const handlePrevMonth = () => {
         setCalendarViewDate(prev => {
@@ -552,7 +605,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     const permissions = getPermissions();
 
     const handleRetrySend = async (pendingId, retryParams) => {
-        console.log(retryParams);
+        
         // Set the message back to pending status
         setCCd(prev => prev.map(m => m._id === pendingId ? {
             ...m,
@@ -560,7 +613,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
             _isError: false,
             _uploadProgress: 0,
         } : m));
-        console.log(retryParams);
+        
 
         if (retryParams.type === "text") {
             try {
@@ -1286,7 +1339,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         if (localImages.length > 0) pendingChatType = 'image';
         else if (localVideos.length > 0) pendingChatType = 'video';
         else pendingChatType = 'document';
-        console.log(pendingChatType);
+        
 
         // Create the optimistic pending message
         const pendingMsg = {
@@ -1774,8 +1827,8 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                     </button>
                 </div>
             )}
-            <div className="flex flex-col flex-1 overflow-hidden" style={{ height: 'calc(100vh - 160px)' }}>
-                {displayedMessages.length === 0 && !loadingOlder ? (
+            <div className="flex flex-col flex-1 overflow-hidden">
+                {displayedMessages.length === 0 && !loadingOlder && !isAnimating ? (
                     <div className="relative flex items-center justify-center h-full w-full">
                         <div className="relative w-64 h-80 rounded-3xl bg-black/30 overflow-hidden flex flex-col items-center justify-between py-6 px-4 text-center">
                             <div className="absolute inset-0 -z-10 opacity-40" />
@@ -2155,7 +2208,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
 
             {/* Bottom Section: Input OR Selection Toolbar */}
             {selectedMessages.length > 0 ? (
-                <div className="mb-3 relative flex items-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-2">
+                <div className="mb-1 relative flex items-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-1">
                     <div className="flex justify-between items-center flex-1 bg-white rounded-xl px-4 py-2 shadow-sm min-w-0">
                         <div className="flex items-center gap-4">
                             <button onClick={() => setSelectedMessages([])} className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
@@ -2185,13 +2238,13 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                     </div>
                 </div>
             ) : getBlockStatus() === 'blocked_by_other' ? (
-                <div className="mb-3 relative flex items-center justify-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-2">
+                <div className="mb-1 relative flex items-center justify-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-1">
                     <div className="w-full bg-white/80 backdrop-blur-sm rounded-xl py-3.5 px-4 shadow-sm text-center text-gray-500 text-sm font-medium border border-gray-100 select-none">
                         You cannot send messages to this user.
                     </div>
                 </div>
             ) : getBlockStatus() === 'blocked_by_me' ? (
-                <div className="mb-3 relative flex items-center justify-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-2">
+                <div className="mb-1 relative flex items-center justify-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-1">
                     <div className="w-full bg-white/80 backdrop-blur-sm rounded-xl py-3.5 px-4 shadow-sm text-center text-gray-500 text-sm font-medium border border-gray-100 select-none flex items-center justify-center gap-2">
                         <span>You blocked this user.</span>
                         <button
@@ -2212,7 +2265,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 </div>
             ) : (permissions.canSendText || permissions.canSendMedia) ?
                 (
-                    <div className="mb-3 relative flex items-end lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-2 gap-1">
+                    <div className="mb-1 relative flex items-end lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-1 gap-1">
                         {/* Main Input Wrapper */}
                         <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm min-w-0">
                             {/* Reply Snippet UI */}
@@ -2314,13 +2367,18 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                         {showEmojiPicker && permissions.canSendText && (
                             <div
                                 ref={emojiPickerRef}
-                                className="animate-picker origin-bottom md:origin-bottom-left absolute bg-white rounded-xl shadow-lg border border-gray-200 w-full h-[380px] max-w-[350px] mx-auto left-0 right-0 md:w-[350px] md:h-[400px] md:left-12 md:mx-0 lg:w-[380px] lg:h-[420px] lg:left-20"
+                                className="animate-picker origin-bottom absolute bg-white rounded-xl shadow-lg border border-gray-200"
                                 style={{
                                     zIndex: 9999,
-                                    bottom: 'calc(100% + 8px)'
+                                    bottom: 'calc(100% + 8px)',
+                                    left: '0',
+                                    right: '0',
+                                    width: 'min(100%, 350px)',
+                                    height: 'min(50vh, 380px)',
+                                    margin: '0 auto',
                                 }}
                             >
-                                <EmojiPicker previewConfig={{ showPreview: false }} skinTonesDisabled={true} onEmojiClick={handleEmojiClick} theme="light" width="100%" height="100%" />
+                                <EmojiPicker previewConfig={{ showPreview: false }} skinTonesDisabled={true} onEmojiClick={handleEmojiClick} theme="light" width="100%" height="100%" searchDisabled={window.innerWidth < 640} />
                             </div>
                         )}
 

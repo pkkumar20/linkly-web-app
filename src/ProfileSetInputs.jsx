@@ -122,7 +122,7 @@ export default function ProfileSetInputs({ file, emoji, onProfileset }) {
                 fd.append("bio", values.bio);
                 fd.append("dob", values.dob);
                 const res = await newUserSetProfile(fd)
-                console.log(res);
+                
                 onProfileset(res.data.profileSet)
                 setLoading(false);
             } catch (error) {

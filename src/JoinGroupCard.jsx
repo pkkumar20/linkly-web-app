@@ -25,9 +25,9 @@ function JoinGroupCard() {
                 } else {
                     try {
                         const res = await getGroupDetailById(code);
-                        console.log(res)
+                        
                         if (res.status === 200) {
-                            console.log(res.data);
+                            
                             setData(res.data.user);
                             setType(res.data.user.contactType)
                         }
@@ -41,7 +41,7 @@ function JoinGroupCard() {
             if (path.startsWith("/@")) {
                 setType("user");
                 code = path.slice(1);
-                console.log(code.length == 0);
+                
                 if (code.length == 0) {
                     navigate("/");
 
@@ -49,9 +49,9 @@ function JoinGroupCard() {
                     setUserName(code);
                     try {
                         const res = await getUserDetailByUserName(code);
-                        console.log(res)
+                        
                         if (res.status === 200) {
-                            console.log(res.data);
+                            
                             setData(res.data.user);
                             setErr(false);
                         }

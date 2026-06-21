@@ -62,7 +62,7 @@ function RemovedUSersScreen({ Screen, chat }) {
 
     };
     const handleMenuItemClick = (action, userData) => {
-        console.log(action, userData);
+        
         if (action === "Add to Group") {
             handleRemove(userData);
         }
@@ -217,7 +217,7 @@ function RemovedUSersScreen({ Screen, chat }) {
 }
 
 const CustomMenu = ({ chat, data, onClick, isOpen, onOpen, onClose }) => {
-    console.log(chat);
+    
     const { backendUser } = useContext(AuthContext);
     const [points, setPoints] = useState({ x: 0, y: 0 });
     const [origin, setOrigin] = useState("top left");

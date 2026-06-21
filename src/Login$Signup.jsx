@@ -142,10 +142,10 @@ export default function LoginSignup() {
             {
                 size: "invisible",
                 callback: () => {
-                    console.log("reCAPTCHA solved!");
+                    
                 },
                 "expired-callback": () => {
-                    console.log("reCAPTCHA expired. Try again.");
+                    
                     toast.error("Security check expired. Please try again.");
                 },
             }
@@ -165,7 +165,7 @@ export default function LoginSignup() {
     useEffect(() => {
         if (recaptchaVerifierRef.current) return;
 
-        console.log("Initializing RecaptchaVerifier...");
+        
         try {
             resetRecaptchaContainer();
             recaptchaVerifierRef.current = createRecaptchaVerifier();
@@ -176,7 +176,7 @@ export default function LoginSignup() {
 
         return () => {
             if (recaptchaVerifierRef.current) {
-                console.log("Clearing RecaptchaVerifier on unmount.");
+                
                 try { recaptchaVerifierRef.current.clear(); } catch (_) { }
                 recaptchaVerifierRef.current = null;
             }

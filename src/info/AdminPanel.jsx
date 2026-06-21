@@ -70,7 +70,7 @@ function LockToggle({ checked, onChange, showLock }) {
 }
 
 function AdminPanel({ Screen, chat, selectedAdmin }) {
-    console.log("TOKEN", MAPBOX_TOKEN);
+    
     const { updateGroupPermissions, backendUser, dismissAdmin, removeAdminInChanel } = useContext(AuthContext);
 
     useEffect(() => {
@@ -116,7 +116,7 @@ function AdminPanel({ Screen, chat, selectedAdmin }) {
             return;
         } else {
             const newValue = !toogleValues[name];
-            console.log(newValue);
+            
 
             const isAdmin = chat.admins.some(user => user._id.toString() === backendUser._id.toString());
             const isOwner = chat.owner.toString() === backendUser._id.toString();
@@ -143,7 +143,7 @@ function AdminPanel({ Screen, chat, selectedAdmin }) {
                 fd.append('value', newValue);
 
                 const res = await updateGroupPermissions(fd);
-                console.log(res)
+                
 
             } catch (error) {
                 console.log(error);

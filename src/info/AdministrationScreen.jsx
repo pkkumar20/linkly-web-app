@@ -121,7 +121,7 @@ function AdministrationScreen({ Screen, chat }) {
             setIsSearching(false);
             setSearch("")
         } else {
-            console.log(userId)
+            
             const fd = new FormData();
 
             fd.append("userId", userId);
@@ -129,7 +129,7 @@ function AdministrationScreen({ Screen, chat }) {
             if (chat.contactType === "group") {
                 const res = await addAdmin(fd);
                 if (res.status === 200) {
-                    console.log(res.data.adminData);
+                    
                     setSelected(res.data.adminData)
 
                     setScreen('second')
@@ -143,7 +143,7 @@ function AdministrationScreen({ Screen, chat }) {
                 fd.append("channelId", chatId);
                 const res = await addAdminInChanel(fd);
                 if (res.status === 200) {
-                    console.log(res.data.adminData);
+                    
                     setSelected(res.data.adminData)
 
                     setScreen('second')

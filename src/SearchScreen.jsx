@@ -366,7 +366,7 @@ export default function SerchScreen({ Choose, inputRef }) {
                 }
             });
         }
-        console.log(allLocations)
+        
         return allLocations;
     };
 
@@ -658,7 +658,7 @@ export default function SerchScreen({ Choose, inputRef }) {
                                 </div>
                                 <div className="flex items-center gap-1">
                                     <button onClick={() => {
-                                        console.log("selectedItems", selectedItems);
+                                        
 
                                         const forwardDatas = selectedItems.map(item => ({
                                             _id: item.msg._id,
@@ -840,7 +840,7 @@ export default function SerchScreen({ Choose, inputRef }) {
                                                         handleMediaContext(e, item);
                                                     }}
                                                     onClick={() => {
-                                                        console.log(item.url);
+                                                        
 
                                                         if (isSelectionMode) toggleSelection(item);
                                                         else {
@@ -1172,7 +1172,7 @@ export default function SerchScreen({ Choose, inputRef }) {
                         <button className="w-full rounded-lg flex items-center px-5 py-2.5 gap-3.5 hover:bg-gray-200 text-[15px] font-medium text-gray-800" onClick={async () => {
                             setContextMenu(null);
                             const item = contextMenu.item;
-                            console.log(item);
+                            
 
                             if (!item?.url) return;
 
@@ -1258,7 +1258,7 @@ export default function SerchScreen({ Choose, inputRef }) {
                     contacts={ContactsWithOtherMember()}
                     backendUser={backendUser}
                     onContactClick={(user) => {
-                        console.log("forwardItem", forwardItem);
+                        
 
                         let forwardMessages = [];
                         if (Array.isArray(forwardItem)) {
@@ -1283,7 +1283,7 @@ export default function SerchScreen({ Choose, inputRef }) {
                                 isForwardMultipleOne: true
                             }];
                         }
-                        console.log(forwardMessages);
+                        
 
                         setShowForward(false);
                         setCloseViewer(true);

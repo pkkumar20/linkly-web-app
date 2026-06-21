@@ -561,7 +561,7 @@ function Popup({ isOpen, onClose, chat, members, membersNames, back }) {
                 if (res.status == 409) {
                     toast.error("Already joined the channel")
                 } else {
-                    console.log(res);
+                    
                     onClose();
                     back();
                     toast.success("Added sucessfully")
@@ -571,7 +571,7 @@ function Popup({ isOpen, onClose, chat, members, membersNames, back }) {
             } else if (chat.contactType === "group") {
                 const res = await addManyUserInGroupById(fd);
 
-                console.log(res);
+                
                 onClose();
                 back();
                 toast.success("Added sucessfully")

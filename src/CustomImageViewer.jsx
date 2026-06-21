@@ -51,7 +51,7 @@ if (!document.getElementById(STYLE_ID)) {
 
 // ════════════════════════════════════════════════════════════════════════════
 export default function CustomImageViewer({ choose, chatId, msg, images, initialIndex = 0, onClose, senderName, senderProfile, sendTime, }) {
-    console.log(msg);
+    
 
     const { backendUser, contacts, deleteOneFile } = useContext(AuthContext);
     const [currentIndex, setCurrentIndex] = useState(initialIndex);

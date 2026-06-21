@@ -35,7 +35,7 @@ function AuthHandler() {
     //         // 2) Query param → extract ID but DON'T show ViewInfo
     //         const queryUserId = params.get('userID');
     //         if (queryUserId) {
-    //             console.log(`user id is ${queryUserId}`);
+    //             
     //             setUserId(queryUserId);
     //             setIsInviteOrProfileLink(false); // Key: Don't show ViewInfo
     //             return;

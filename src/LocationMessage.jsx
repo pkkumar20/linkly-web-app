@@ -5,7 +5,7 @@ import LocationViewer from "./LocationViewer";
 
 const MAPPLS_TOKEN = import.meta.env.VITE_MAPPLS_TOKEN;
 
-const LocationMessage = ({ msg, isSent, formattedTime, hasOtherIds, timeBlock }) => {
+const LocationMessage = React.memo(({ msg, isSent, formattedTime, hasOtherIds, timeBlock }) => {
     const [mapError, setMapError] = useState(false);
     const [viewerOpen, setViewerOpen] = useState(false);
     
@@ -34,36 +34,30 @@ const LocationMessage = ({ msg, isSent, formattedTime, hasOtherIds, timeBlock })
                         properties: {
                             center: [coords.latitude, coords.longitude],
                             zoom: 14,
-                            interactive: false,
-                            scrollZoom: false,
-                            boxZoom: false,
-                            dragRotate: false,
-                            dragPan: false,
-                            keyboard: false,
-                            doubleClickZoom: false,
-                            touchZoomRotate: false,
                             zoomControl: false,
-                            clickableIcons: false,
-                            searchControl: false,
-                            location: false,
-                            fullscreenControl: false
+                            fullscreenControl: false,
+                            clickableIcons: false
                         },
                     });
 
-                    newMap.on("load", () => {
-                        if (!isMounted) return;
-                        mapplsClassObject.Marker({
-                            map: newMap,
-                            position: { lat: coords.latitude, lng: coords.longitude },
-                            width: 32,
-                            height: 32,
-                            html: `<div class="location-marker-pin"><div class="location-marker-pin-inner"></div></div>`
+                    if (newMap && typeof newMap.on === 'function') {
+                        newMap.on("load", () => {
+                            if (!isMounted) return;
+                            mapplsClassObject.Marker({
+                                map: newMap,
+                                position: { lat: coords.latitude, lng: coords.longitude },
+                                width: 32,
+                                height: 32,
+                                html: `<div class="location-marker-pin"><div class="location-marker-pin-inner"></div></div>`
+                            });
                         });
-                    });
-                    
-                    newMap.on("error", () => {
+                        
+                        newMap.on("error", () => {
+                            if (isMounted) setMapError(true);
+                        });
+                    } else {
                         if (isMounted) setMapError(true);
-                    });
+                    }
 
                     mapRef.current = newMap;
                 } catch (e) {
@@ -255,6 +249,14 @@ const LocationMessage = ({ msg, isSent, formattedTime, hasOtherIds, timeBlock })
             )}
         </div>
     );
-};
+}, (prevProps, nextProps) => {
+    // Only re-render if the message ID or location coordinates actually changed
+    return prevProps.msg._id === nextProps.msg._id &&
+        prevProps.isSent === nextProps.isSent &&
+        prevProps.hasOtherIds === nextProps.hasOtherIds &&
+        prevProps.msg.locationDetails?.coordinates?.[0] === nextProps.msg.locationDetails?.coordinates?.[0] &&
+        prevProps.msg.locationDetails?.coordinates?.[1] === nextProps.msg.locationDetails?.coordinates?.[1];
+});
 
 export default LocationMessage;
+
