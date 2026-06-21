@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "./firebase hooks/AuthContext";
-import IsProfileSetted from "./isProfileSetted";
+import IsProfileSetted from "./IsProfileSetted";
 import { Routes, Route, Navigate } from "react-router"
 import Lottie from "lottie-react";
 import myAnimation from "./lottie/Cute Tiger.json";
