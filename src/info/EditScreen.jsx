@@ -42,7 +42,7 @@ import { MdOutlineAdminPanelSettings } from "react-icons/md";
 import { LuUsers } from "react-icons/lu";
 import { LiaUserTimesSolid } from "react-icons/lia";
 import GroupType from './GroupType';
-import InviteLinkScreen from './inviteLinkScreen';
+import InviteLinkScreen from './InviteLinkScreen';
 import AdministrationScreen from './AdministrationScreen';
 import MemberScreen from './MemberScreen';
 import RemovedUSersScreen from './RemovedUsers';
