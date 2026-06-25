@@ -208,7 +208,7 @@ function AuthenticatedUser() {
         setCurrent("Home");
         setDirection("back");
         setAnimating(true);
-        setTimeout(() => setAnimating(false), 300);
+        setTimeout(() => setAnimating(false), 260);
 
         // Keep URL with hash preserved
         window.history.pushState({}, '', window.location.pathname + window.location.hash);
@@ -336,7 +336,6 @@ function AuthenticatedUser() {
 
     return isSmMd;
   }
-  // ✅ Add this useEffect (key fix!)
   useEffect(() => {
     if (selectedContactId && contacts.length > 0) {
 
@@ -353,6 +352,16 @@ function AuthenticatedUser() {
       }
     }
   }, [contacts, selectedContactId]); // ✅ Re-runs when contacts change!
+
+  // ✅ Keep active chat messages in sync with recentChats (fixes empty messages on reload)
+  // Note: removed recentChats from deps to prevent cascading re-renders on every message.
+  // Initial load is handled by the hashchange listener; contact switches call handleChat directly.
+  useEffect(() => {
+    if (selectedContactId) {
+      handleChat(selectedContactId);
+    }
+  }, [selectedContactId, handleChat]);
+
 
   const isSmMd = useIsSmMd();
   const handleInputPress = (next, ChatData = null, extraData = null, redirectData = null, redirectData2 = null, autoChatSendData = null, forwardData = null) => {
@@ -424,7 +433,7 @@ function AuthenticatedUser() {
         setCurrent("Home");
         setDirection("back");
         setAnimating(true);
-        setTimeout(() => setAnimating(false), 300);
+        setTimeout(() => setAnimating(false), 260);
       }
       return;
     }
@@ -455,7 +464,7 @@ function AuthenticatedUser() {
     setAnimating(true);
 
     initialLoad.current = false;
-    setTimeout(() => setAnimating(false), 300);
+    setTimeout(() => setAnimating(false), 260);
   };
 
   // Listen for custom navigation events from deeply nested components (e.g., MemberScreen)
@@ -500,7 +509,7 @@ function AuthenticatedUser() {
           setDirection("back");
           setAnimating(true);
           window.history.pushState({}, '', `/`);
-          setTimeout(() => setAnimating(false), 300);
+          setTimeout(() => setAnimating(false), 260);
         }}
       />;
     }
@@ -675,6 +684,7 @@ function AuthenticatedUser() {
                     window.history.pushState({}, '', `/`);
                     setActiveChat(false);
                   }}
+                  isMobile={isSmMd}
                 />
               </motion.div>
             )}
@@ -683,7 +693,7 @@ function AuthenticatedUser() {
           <ChatArea isChatSelected={isChatSelected} chat={selectedChat} contactData={selectedChat} back={handleBackFromChat} choose={handleInputPress} autoChatSendData={autoSendChat} forwardMessagesData={forwardMessagesData} setForwardMessagesData={setForwardMessagesData} isNavbarHidden={activeChat && isSmMd} resetAutoSentChat={(data) => {
 
             setAutoSendChat("")
-          }} />
+          }} isMobile={isSmMd} />
         )}
       </div>
       {(joinPopUpData !== null && isJoinPopUpOpen === true) && (

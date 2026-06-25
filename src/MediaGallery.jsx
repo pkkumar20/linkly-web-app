@@ -102,6 +102,43 @@ const MediaGallery = ({ images, onContextMenu, onForward, selectedItems = [], is
     const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
     const sentinelRef = useRef(null);
 
+    const isViewerIndexPushedRef = useRef(false);
+
+    // Sync viewerIndex with history
+    useEffect(() => {
+        if (viewerIndex !== null) {
+            if (!isViewerIndexPushedRef.current) {
+                isViewerIndexPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, mediaGalleryViewerOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash);
+            }
+        } else {
+            if (isViewerIndexPushedRef.current) {
+                isViewerIndexPushedRef.current = false;
+                if (window.history.state?.mediaGalleryViewerOpen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [viewerIndex]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (viewerIndex !== null && !e.state?.mediaGalleryViewerOpen) {
+                isViewerIndexPushedRef.current = false;
+                setViewerIndex(null);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [viewerIndex]);
+
+    useEffect(() => {
+        return () => {
+            // Unmount cleanup disabled to prevent history lag
+        };
+    }, []);
+
     // Memoize normalized images
     const normalizedImages = useMemo(() =>
         images.map((item, idx) => {

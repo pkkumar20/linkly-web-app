@@ -1,5 +1,6 @@
 // SidebarWithLogo.jsx
 import './scrollbar.css';
+import React, { useEffect, useState, useContext, useRef, useCallback, useMemo } from 'react';
 import {
   Typography,
   List,
@@ -10,13 +11,143 @@ import { motion, AnimatePresence } from "framer-motion";
 import UserAvatar from "./UserAvatar"
 import Sidebar from "./TestSidebar"
 import { RiShareForwardFill } from "react-icons/ri";
-import { useEffect, useState, useContext, useRef, useCallback } from 'react';
 import { AuthContext } from './firebase hooks/AuthContext';
 import FabPopover from './FabPopOver';
 import Lottie from 'lottie-react';
 import myAnimation from "./lottie/empty.json"
 import { IoCheckmarkCircleOutline, IoOpenOutline, IoExitOutline } from "react-icons/io5";
 import { MdDeleteOutline } from "react-icons/md";
+
+// ─── Memoized contact list item (only re-renders when its own props change) ───
+const ContactListItem = React.memo(function ContactListItem({
+  user,
+  isSelected,
+  onContextMenu,
+  onTouchStart,
+  onTouchEnd,
+  onTouchMove,
+  onClick,
+  backendUserId,
+  formatName,
+  formatDate,
+  lastMessege,
+}) {
+  const unreadCount = useMemo(() => {
+    const currentUserMember = user.members.find(
+      member => member._id._id.toString() === backendUserId.toString()
+    );
+    return currentUserMember?.unread || 0;
+  }, [user.members, backendUserId]);
+
+  const lastMsg = useMemo(() => {
+    if (user.lastMessage != undefined && user.lastMessage != null) {
+      return lastMessege(user.lastMessage, user.otherMember);
+    }
+    return null;
+  }, [user.lastMessage, user.otherMember, lastMessege]);
+
+  const formattedTime = useMemo(() => {
+    if (user.lastMessageTime != undefined) {
+      return formatDate(user.lastMessageTime);
+    }
+    return null;
+  }, [user.lastMessageTime, formatDate]);
+
+  const displayName = useMemo(() => {
+    if (user.contactType === "person") {
+      return user.otherMember[0].nickName
+        ? (user.otherMember[0].nickLastName
+          ? formatName(user.otherMember[0].nickName) + " " + formatName(user.otherMember[0].nickLastName)
+          : formatName(user.otherMember[0].nickName))
+        : user.otherMember[0]._id.name;
+    }
+    return user.name || "";
+  }, [user.contactType, user.otherMember, user.name, formatName]);
+
+  // Avatar props — memoized to prevent UserAvatar re-renders
+  const avatarProps = useMemo(() => {
+    if (user.contactType === "person") {
+      const member = user.otherMember[0];
+      if (member._id !== null && member._id.profile.type === 'image') {
+        return { image: member._id.profile.imageUrl };
+      }
+      if (member._id !== null && member._id.profile.type === 'emoji') {
+        return { emoji: member._id.profile.emoji, simpleBg: member._id.profile.bgColor, emojiSize: "text-3xl" };
+      }
+      if (member._id !== null && member._id.profile.type === 'initials') {
+        const text = member.nickName
+          ? (member.nickLastName
+            ? member.nickName[0].toUpperCase() + member.nickLastName[0].toUpperCase()
+            : member.nickName[0].toUpperCase())
+          : member._id.profile.initials;
+        return { simpleBg: member._id.profile.bgColor, text };
+      }
+      return {};
+    }
+    // group or channel
+    if (user.details?.profile) {
+      const profile = user.details.profile;
+      if (profile.type === 'image') return { image: profile.imageUrl };
+      if (profile.type === 'emoji') return { emoji: profile.emoji, simpleBg: profile.bgColor, emojiSize: "text-3xl" };
+      if (profile.type === 'initials') return { simpleBg: profile.bgColor, text: profile.initials };
+    }
+    return {};
+  }, [user.contactType, user.otherMember, user.details]);
+
+  const selectedClass = isSelected
+    ? "!bg-[#8763ea] !text-white hover:!bg-[#8763ea] focus:!bg-[#8763ea] active:!bg-[#8763ea]"
+    : (user.contactType === "person" ? "text-black " : (user.contactType === "group" ? "text-gray-700 " : "text-black "));
+
+  return (
+    <ListItem
+      selected={isSelected}
+      onContextMenu={onContextMenu}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onTouchMove={onTouchMove}
+      onClick={onClick}
+      className={`flex justify-between items-center ${selectedClass}`}
+    >
+      {/* Left side - Icon + Text */}
+      <div className="flex items-center gap-3">
+        <ListItemPrefix>
+          <UserAvatar {...avatarProps} />
+        </ListItemPrefix>
+        <div className="flex flex-col">
+          <Typography className={`font-semibold text-lg ${isSelected ? "text-white" : "text-black"}`}>
+            {displayName}
+          </Typography>
+          <Typography
+            variant="small"
+            className={`text-sm font-medium max-w-[180px] truncate ${isSelected ? "text-white" : "text-gray-700"}`}
+          >
+            {lastMsg !== null && user.lastMessage != null ? (
+              <span className="flex items-center gap-1 w-full truncate">
+                {user.lastMessage.ForwardedDetails?.isForwarded && (
+                  <RiShareForwardFill size={15} className={`flex-shrink-0 ${isSelected ? "text-white" : "text-red-600"}`} />
+                )}
+                <span className="truncate">{lastMsg}</span>
+              </span>
+            ) : null}
+          </Typography>
+        </div>
+      </div>
+
+      {/* Right side - Time + Unread bubble */}
+      <div className="flex flex-col items-end justify-between h-full">
+        <Typography variant="small" className={`text-xs font-medium ${isSelected ? "text-white" : "text-gray-700"}`}>
+          {formattedTime}
+        </Typography>
+        {unreadCount > 0 && (
+          <span className="mt-1 bg-green-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+            {unreadCount}
+          </span>
+        )}
+      </div>
+    </ListItem>
+  );
+});
+
 export default function Navbar({ Choose, ChatsData, SelectedChat }) {
   const { contacts, rstUnread, markAllAsRead, backendUser, recentChats, deletePerson, leaveGroup, deleteAndLeaveGroup, leaveChanel } = useContext(AuthContext);
   const [isFocused, setIsFocused] = useState(false);
@@ -219,7 +350,7 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
       };
     }
   }, [contextMenu.visible, closeContextMenu]);
-  ChatsData.sort((a, b) => b.time - a.time);
+  // Sort is handled by the useEffect on line 523-531 (shortedContacts), no inline sort needed
   function timestampToAmPm(timestamp) {
     const date = new Date(timestamp);
     let hours = date.getHours();
@@ -231,7 +362,7 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
     return `${hours}:${minutesStr} ${ampm}`;
   }
 
-  const lastMessege = (messegeData, otherMember) => {
+  const lastMessege = useCallback((messegeData, otherMember) => {
     // 
 
     if (messegeData.chatType !== "label") {
@@ -483,7 +614,7 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
       }
 
     }
-  }
+  }, [backendUser]);
   const getUnreadCount = (contact) => {
     const currentUserMember = contact.members.find(
       member => member._id._id.toString() === backendUser._id.toString()
@@ -531,7 +662,7 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
     }
   }, [userContacts])
 
-  function formatDate(dateStr) {
+  const formatDate = useCallback((dateStr) => {
     const inputDate = new Date(dateStr);
     if (isNaN(inputDate.getTime())) {
       // Invalid date, show fallback or error
@@ -580,7 +711,7 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
 
     // different year: show date as dd/mm/yyyy
     return pad(inputDate.getDate()) + '/' + pad(inputDate.getMonth() + 1) + '/' + inputDate.getFullYear();
-  }
+  }, []);
   const [showFab, setShowFab] = useState(true);
   const fabVariants = {
     hidden: {
@@ -606,29 +737,31 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
       }
     }
   };
-  const handleSidevarListPress = (screen) => {
+  const handleSidevarListPress = useCallback((screen) => {
     Choose(screen)
+  }, [Choose]);
 
-
-  }
-  const formatName = (name) => {
+  const formatName = useCallback((name) => {
     if (!name) return "";
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-  };
-  const dataSender = (data) => {
+  }, []);
+
+  const dataSender = useCallback((data) => {
     setSelectedChat(data);
     Choose("Chat", data);
-  }
-  const rdHadler = (e) => {
+  }, [Choose]);
+
+  const rdHadler = useCallback((e) => {
     if (e.redirectData != undefined) {
       Choose(e.Screen, e.redirectData)
     } else {
       Choose(e.Screen)
     }
-  }
-  const goToChatArea = (chat) => {
+  }, [Choose]);
+
+  const goToChatArea = useCallback((chat) => {
     Choose("Chat", chat);
-  }
+  }, [Choose]);
   function getNewerMessage(msg1, msg2) {
     const date1 = new Date(msg1.time);
     const date2 = new Date(msg2.time);
@@ -687,289 +820,27 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
 
           {(contacts != null && contacts != 'undefined' && contacts.length > 0) && (
             <List>
-
-              {shortedContacts.map((user) =>
-                user.contactType == "person" ? (
-                  <ListItem
-                    selected={user._id == selectedChat._id}
-                    onContextMenu={(e) => handleContextMenu(e, user)}
-                    onTouchStart={(e) => handleTouchStart(e, user)}
-                    onTouchEnd={handleTouchEnd}
-                    onTouchMove={handleTouchMove}
-                    onClick={() => {
-                      if (longPressTriggered.current) return;
-                      setSelectedChat({ _id: user._id });
-                      goToChatArea(user)
-                      rstUnread(user._id, backendUser._id)
-                    }}
-                    key={user._id}
-                    className={`flex justify-between items-center
-    ${user._id == selectedChat._id
-                        ? "!bg-[#8763ea] !text-white hover:!bg-[#8763ea] focus:!bg-[#8763ea] active:!bg-[#8763ea]"
-                        : "text-black "}
-  `}
-                  >
-                    {/* Left side - Icon + Text */}
-
-                    <div className="flex items-center gap-3">
-                      <ListItemPrefix>
-                        <UserAvatar    {...(user.otherMember[0]._id !== null && user.otherMember[0]._id.profile.type === 'image' && {
-                          image: user.otherMember[0]._id.profile.imageUrl,
-                        })}
-                          {...(user.otherMember[0]._id !== null && user.otherMember[0]._id.profile.type === 'emoji' && {
-                            emoji: user.otherMember[0]._id.profile
-                              .emoji,
-                            simpleBg: user.otherMember[0]._id.profile
-                              .bgColor,
-                            emojiSize: "text-3xl"
-                          })}
-                          {...(user.otherMember[0]._id !== null && user.otherMember[0]._id.profile.type === 'initials' && {
-                            simpleBg: user.otherMember[0]._id.profile
-                              .bgColor,
-                            text: user.otherMember[0].nickName ? (user.otherMember[0].
-                              nickLastName ? (user.otherMember[0].nickName[0].toUpperCase() + user.otherMember[0].
-                                nickLastName[0].toUpperCase()) : (user.otherMember[0].nickName[0].toUpperCase())) : (user.otherMember[0]._id.profile
-                                  .initials),
-
-                          })} />
-                      </ListItemPrefix>
-
-                      <div className="flex flex-col">
-                        {/* Name */}
-                        <Typography className={`font-semibold text-lg ${user._id == selectedChat._id
-                          ? "text-white" : "text-black"} `}>
-                          {user.otherMember[0].nickName ? (user.otherMember[0].nickLastName ? (formatName(user.otherMember[0].nickName) + " " + formatName(user.otherMember[0].nickLastName)) : (formatName(user.otherMember[0].nickName))) : (user.otherMember[0]._id.name)}
-                        </Typography>
-
-                        <Typography
-                          variant="small"
-
-                          className={`text-sm  font-medium max-w-[180px] truncate ${user._id == selectedChat._id
-                            ? "text-white" : "text-gray-700"}`}
-                        >
-                          {user.lastMessage != undefined && user.lastMessage != null
-                            ? (
-                              <span className="flex items-center gap-1 w-full truncate">
-                                {user.lastMessage.ForwardedDetails?.isForwarded && <RiShareForwardFill size={15} className={`flex-shrink-0 ${user._id == selectedChat._id ? "text-white" : "text-red-600"}`} />}
-                                <span className="truncate">{lastMessege(user.lastMessage, user.otherMember)}</span>
-                              </span>
-                            ) : null}
-                        </Typography>
-
-                      </div>
-                    </div>
-
-                    {/* Right side - Time + Unread bubble */}
-                    <div className="flex flex-col items-end justify-between h-full">
-                      {/* Time */}
-                      <Typography variant="small" className={`text-xs font-medium ${user._id == selectedChat._id
-                        ? "text-white" : "text-gray-700"}`}>
-
-                        {user.lastMessageTime != undefined
-                          ? (formatDate(user.lastMessageTime)
-                          ) : null}
-
-                      </Typography>
-
-                      {/* Unread bubble */}
-                      {getUnreadCount(user) > 0 && (
-                        <span className="mt-1  bg-green-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                          {getUnreadCount(user)}
-                        </span>
-                      )}
-
-
-
-                    </div>
-                  </ListItem>
-                ) : user.contactType == "group" ? (
-                  <ListItem
-                    selected={user._id == selectedChat._id}
-                    onContextMenu={(e) => handleContextMenu(e, user)}
-                    onTouchStart={(e) => handleTouchStart(e, user)}
-                    onTouchEnd={handleTouchEnd}
-                    onTouchMove={handleTouchMove}
-                    onClick={() => {
-                      if (longPressTriggered.current) return;
-                      setSelectedChat({ _id: user._id });
-                      goToChatArea(user)
-                      rstUnread(user._id, backendUser._id)
-                    }}
-                    key={user._id}
-                    className={`flex justify-between items-center
-    ${user._id == selectedChat._id
-                        ? "!bg-[#8763ea] !text-white hover:!bg-[#8763ea] focus:!bg-[#8763ea] active:!bg-[#8763ea]"
-                        : "text-gray-700 "}
-  `}
-                  >
-                    {/* Left side - Icon + Text */}
-
-                    <div className="flex items-center gap-3">
-                      <ListItemPrefix>
-                        <UserAvatar    {...(user.details.profile !== null && user.details.profile.type === 'image' && {
-                          image: user.details.profile.imageUrl,
-                        })}
-                          {...(user.details.profile !== null && user.details.profile.type === 'emoji' && {
-                            emoji: user.details.profile
-                              .emoji,
-                            simpleBg: user.details.profile
-                              .bgColor,
-                            emojiSize: "text-3xl"
-                          })}
-                          {...(user.details.profile !== null && user.details.profile.type === 'initials' && {
-                            simpleBg: user.details.profile
-                              .bgColor,
-                            text: user.details.profile.initials,
-
-                          })} />
-                      </ListItemPrefix>
-
-                      <div className="flex flex-col">
-                        {/* Name */}
-                        <Typography className={`font-semibold text-lg ${user._id == selectedChat._id
-                          ? "text-white" : "text-black"} `}>
-                          {user.contactType == "person" && (user.otherMember[0].nickName ? (user.otherMember[0].nickLastName ? (formatName(user.otherMember[0].nickName) + " " + formatName(user.otherMember[0].nickLastName)) : (formatName(user.otherMember[0].nickName))) : (user.otherMember[0]._id.name))}
-                          {user.contactType == "group" && (
-                            user.name
-                          )}
-                        </Typography>
-
-                        <Typography
-
-                          className={`text-sm font-medium   max-w-[180px] truncate ${user._id == selectedChat._id
-                            ? "text-white" : "text-gray-700"}`}
-                        >
-                          {user.lastMessage != undefined && user.lastMessage != null
-                            ? (
-                              <span className="flex items-center gap-1 w-full truncate">
-                                {user.lastMessage.ForwardedDetails?.isForwarded && <RiShareForwardFill size={15} className="flex-shrink-0" />}
-                                <span className="truncate">{lastMessege(user.lastMessage, user.otherMember)}</span>
-                              </span>
-                            ) : null}
-                        </Typography>
-
-                      </div>
-                    </div>
-
-                    {/* Right side - Time + Unread bubble */}
-                    <div className="flex flex-col items-end justify-between h-full">
-                      {/* Time */}
-                      <Typography variant="small" className={`font-medium text-xs ${user._id == selectedChat._id
-                        ? "text-white" : "text-black"}`}>
-
-                        {user.lastMessageTime != undefined
-                          ? (formatDate(user.lastMessageTime)
-                          ) : null}
-
-                      </Typography>
-
-                      {/* Unread bubble */}
-                      {getUnreadCount(user) > 0 && (
-                        <span className="mt-1  bg-green-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                          {getUnreadCount(user)}
-                        </span>
-                      )}
-
-
-
-                    </div>
-                  </ListItem>
-                ) : user.contactType == "channel" ? (
-                  <ListItem
-                    selected={user._id == selectedChat._id}
-                    onContextMenu={(e) => handleContextMenu(e, user)}
-                    onTouchStart={(e) => handleTouchStart(e, user)}
-                    onTouchEnd={handleTouchEnd}
-                    onTouchMove={handleTouchMove}
-                    onClick={() => {
-                      if (longPressTriggered.current) return;
-                      setSelectedChat({ _id: user._id });
-                      goToChatArea(user)
-                      rstUnread(user._id, backendUser._id)
-                    }}
-                    key={user._id}
-                    className={`flex justify-between items-center
-    ${user._id == selectedChat._id
-                        ? "!bg-[#8763ea] !text-white hover:!bg-[#8763ea] focus:!bg-[#8763ea] active:!bg-[#8763ea]"
-                        : "text-black "}
-  `}
-                  >
-                    {/* Left side - Icon + Text */}
-
-                    <div className="flex items-center gap-3">
-                      <ListItemPrefix>
-                        <UserAvatar    {...(user.details.profile !== null && user.details.profile.type === 'image' && {
-                          image: user.details.profile.imageUrl,
-                        })}
-                          {...(user.details.profile !== null && user.details.profile.type === 'emoji' && {
-                            emoji: user.details.profile
-                              .emoji,
-                            simpleBg: user.details.profile
-                              .bgColor,
-                            emojiSize: "text-3xl"
-                          })}
-                          {...(user.details.profile !== null && user.details.profile.type === 'initials' && {
-                            simpleBg: user.details.profile
-                              .bgColor,
-                            text: user.details.profile.initials,
-
-                          })} />
-                      </ListItemPrefix>
-
-                      <div className="flex flex-col">
-                        {/* Name */}
-                        <Typography className={`font-semibold text-lg ${user._id == selectedChat._id
-                          ? "text-white" : "text-black"} `}>
-                          {user.contactType == "channel" && (
-                            user.name
-                          )}
-                        </Typography>
-
-                        <Typography
-
-                          className={`text-sm font-medium   max-w-[180px] truncate ${user._id == selectedChat._id
-                            ? "text-white" : "text-gray-700"}`}
-                        >
-                          {user.lastMessage != undefined && user.lastMessage != null
-                            ? (
-                              <span className="flex items-center gap-1 w-full truncate">
-                                {user.lastMessage.ForwardedDetails?.isForwarded && <RiShareForwardFill size={15} className="flex-shrink-0" />}
-                                <span className="truncate">{lastMessege(user.lastMessage, user.otherMember)}</span>
-                              </span>
-                            ) : null}
-                        </Typography>
-
-                      </div>
-                    </div>
-
-                    {/* Right side - Time + Unread bubble */}
-                    <div className="flex flex-col items-end justify-between h-full">
-                      {/* Time */}
-                      <Typography variant="small" className={`font-medium text-xs ${user._id == selectedChat._id
-                        ? "text-white" : "text-black"}`}>
-
-                        {user.lastMessageTime != undefined
-                          ? (formatDate(user.lastMessageTime)
-                          ) : null}
-
-                      </Typography>
-
-                      {/* Unread bubble */}
-                      {getUnreadCount(user) > 0 && (
-                        <span className="mt-1  bg-green-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                          {getUnreadCount(user)}
-                        </span>
-                      )}
-
-
-
-                    </div>
-                  </ListItem>
-                ) : null
-
-
-
-              )}
+              {shortedContacts.map((user) => (
+                <ContactListItem
+                  key={user._id}
+                  user={user}
+                  isSelected={user._id == selectedChat._id}
+                  onContextMenu={(e) => handleContextMenu(e, user)}
+                  onTouchStart={(e) => handleTouchStart(e, user)}
+                  onTouchEnd={handleTouchEnd}
+                  onTouchMove={handleTouchMove}
+                  onClick={() => {
+                    if (longPressTriggered.current) return;
+                    setSelectedChat({ _id: user._id });
+                    goToChatArea(user);
+                    rstUnread(user._id, backendUser._id);
+                  }}
+                  backendUserId={backendUser._id}
+                  formatName={formatName}
+                  formatDate={formatDate}
+                  lastMessege={lastMessege}
+                />
+              ))}
             </List>
           )}
           {(contacts == null || contacts == 'undefined' || contacts.length == 0) && (

@@ -80,6 +80,14 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
     if (chat === null) return;
 
     const { contacts, backendUser, deleteSelectedMedia, deleteOneFile } = useContext(AuthContext)
+    const [isAnimationFinished, setIsAnimationFinished] = useState(false);
+
+    useEffect(() => {
+        if (!panelOpen) {
+            setIsAnimationFinished(false);
+        }
+    }, [panelOpen]);
+
     const [sidebarMode, setSidebarMode] = useState("info"); // 'info' or 'search'
     const isSearching = sidebarMode === "search" && panelOpen;
     const setIsSearching = (val) => {
@@ -99,6 +107,13 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
     const [memberSearchText, setMemberSearchText] = useState("");
     const [activeSearchIndex, setActiveSearchIndex] = useState(-1);
     const searchHeaderRef = useRef(null);
+    const searchInputRef = useRef(null);
+
+    useEffect(() => {
+        if (isAnimationFinished && sidebarMode === "search" && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [isAnimationFinished, sidebarMode]);
 
     const renderChatAvatar = (size = "w-10 h-10") => {
         if (!chat) return null;
@@ -130,7 +145,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
     };
 
     const searchedMessages = useMemo(() => {
-        if (!isSearching) return [];
+        if (!isAnimationFinished || !isSearching) return [];
         let filtered = messages || [];
         if (selectedUserFilter) {
             const filterUserId = selectedUserFilter._id?.toString();
@@ -149,7 +164,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
             });
         }
         return [...filtered].sort((a, b) => new Date(b.time) - new Date(a.time));
-    }, [messages, isSearching, selectedUserFilter, searchText, memberSearchText, showMembersDropdown]);
+    }, [messages, isSearching, selectedUserFilter, searchText, memberSearchText, showMembersDropdown, isAnimationFinished]);
 
     const highlightText = (text, query) => {
         if (!text) return "";
@@ -254,13 +269,126 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
     const [showFab, setShowFab] = useState(false);
     const [members, setMembers] = useState(null)
     const [rdData, setRdData] = useState("")
+    const [mediaViewer, setMediaViewer] = useState(null);  // { items, initialIndex }
+
+    const isMediaViewerPushedRef = useRef(false);
+
+    // Sync mediaViewer state with history
+    useEffect(() => {
+        if (mediaViewer) {
+            if (!isMediaViewerPushedRef.current) {
+                isMediaViewerPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, infoMediaViewerOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash);
+            }
+        } else {
+            if (isMediaViewerPushedRef.current) {
+                isMediaViewerPushedRef.current = false;
+                if (window.history.state?.infoMediaViewerOpen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [mediaViewer]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (mediaViewer && !e.state?.infoMediaViewerOpen) {
+                isMediaViewerPushedRef.current = false;
+                setMediaViewer(null);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [mediaViewer]);
+
+    useEffect(() => {
+        return () => {
+            // Unmount cleanup disabled to prevent history lag
+        };
+    }, []);
+
     const [isEditScreenOpen, setIsEditScreenOpen] = useState(false);
     const [openAddContact, setOpenAddContact] = useState(false);
+
+    const isEditPushedRef = useRef(false);
+    const isAddContactPushedRef = useRef(false);
+
+    // Sync isEditScreenOpen state with history
+    useEffect(() => {
+        if (isEditScreenOpen) {
+            if (!isEditPushedRef.current) {
+                isEditPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, editScreenOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash);
+            }
+        } else {
+            if (isEditPushedRef.current) {
+                isEditPushedRef.current = false;
+                if (window.history.state?.editScreenOpen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [isEditScreenOpen]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (isEditScreenOpen && !e.state?.editScreenOpen) {
+                isEditPushedRef.current = false;
+                setIsEditScreenOpen(false);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [isEditScreenOpen]);
+
+    useEffect(() => {
+        return () => {
+            // Unmount cleanup disabled to prevent history lag
+        };
+    }, []);
+
+    // Sync openAddContact state with history
+    useEffect(() => {
+        if (openAddContact) {
+            if (!isAddContactPushedRef.current) {
+                isAddContactPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, addContactOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash);
+            }
+        } else {
+            if (isAddContactPushedRef.current) {
+                isAddContactPushedRef.current = false;
+                if (window.history.state?.addContactOpen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [openAddContact]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (openAddContact && !e.state?.addContactOpen) {
+                isAddContactPushedRef.current = false;
+                setOpenAddContact(false);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [openAddContact]);
+
+    useEffect(() => {
+        return () => {
+            // Unmount cleanup disabled to prevent history lag
+        };
+    }, []);
+
     const [activeInfoTab, setActiveInfoTab] = useState('members');
     const [infoTabDir, setInfoTabDir] = useState(0);
     const tabBarRef = useRef(null);
     const scrollContainerRef = useRef(null);
-    const [mediaViewer, setMediaViewer] = useState(null);  // { items, initialIndex }
+    // { items, initialIndex }
     const [musicPlayer, setMusicPlayer] = useState(null);  // { track }
     const [showForward, setShowForward] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
@@ -629,9 +757,18 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
             }
         }
     // Memoize expensive data computations to prevent lag on tab switch
-    const cachedMedia = useMemo(() => getMedia(), [messages]);
-    const cachedFiles = useMemo(() => getFiles(), [messages]);
-    const cachedMusic = useMemo(() => getMusic(), [messages]);
+    const cachedMedia = useMemo(() => {
+        if (!isAnimationFinished) return [];
+        return getMedia();
+    }, [messages, isAnimationFinished]);
+    const cachedFiles = useMemo(() => {
+        if (!isAnimationFinished) return [];
+        return getFiles();
+    }, [messages, isAnimationFinished]);
+    const cachedMusic = useMemo(() => {
+        if (!isAnimationFinished) return [];
+        return getMusic();
+    }, [messages, isAnimationFinished]);
     const allViewerItems = useMemo(() => cachedMedia.map(item => ({
         type: item.type, url: item.url, name: item.name,
         mediaItemId: item.mediaItemId,
@@ -676,8 +813,14 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
         return items;
     };
 
-    const cachedCommonGroups = useMemo(() => getGroups(), [chat, contacts, backendUser]);
-    const cachedCommonChannels = useMemo(() => getChannels(), [chat, contacts, backendUser]);
+    const cachedCommonGroups = useMemo(() => {
+        if (!isAnimationFinished) return [];
+        return getGroups();
+    }, [chat, contacts, backendUser, isAnimationFinished]);
+    const cachedCommonChannels = useMemo(() => {
+        if (!isAnimationFinished) return [];
+        return getChannels();
+    }, [chat, contacts, backendUser, isAnimationFinished]);
 
     const infoTabs = useMemo(() => [
         ...(chat?.contactType !== 'person' ? [{ key: 'members', label: 'Members', icon: BsPeopleFill }] : []),
@@ -703,7 +846,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
     }, [infoTabs, activeInfoTab]);
 
     const filteredMembers = useMemo(() => {
-        if (!members) return [];
+        if (!isAnimationFinished || !members) return [];
         if (!memberSearchText) return members;
         const q = memberSearchText.toLowerCase();
         return members.filter(m => {
@@ -711,7 +854,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
             const username = (m.username || '').toLowerCase();
             return fullName.includes(q) || username.includes(q);
         });
-    }, [members, memberSearchText]);
+    }, [members, memberSearchText, isAnimationFinished]);
 
     if (chat == null) {
         return null;
@@ -906,12 +1049,17 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
 
                         {/* Main Info Panel */}
                         <motion.div
-                            className="select-none fixed   right-0 top-0 h-screen bg-gray-100 shadow-xl z-40 w-full md:w-96"
+                            className="select-none fixed   right-0 top-0 h-[100dvh] bg-gray-100 shadow-xl z-40 w-full md:w-96"
                             variants={infoPanelVariants}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
                             transition={{ type: "spring", stiffness: 250, damping: 28 }}
+                            onAnimationComplete={() => {
+                                if (panelOpen) {
+                                    setIsAnimationFinished(true);
+                                }
+                            }}
                         >
                             {sidebarMode === "search" ? (
                                 <div className="flex flex-col h-full bg-white select-none">
@@ -957,6 +1105,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                                             )}
 
                                             <input
+                                                ref={searchInputRef}
                                                 type="text"
                                                 value={showMembersDropdown ? memberSearchText : searchText}
                                                 onChange={(e) => {
@@ -969,7 +1118,6 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                                                     }
                                                 }}
                                                 placeholder={showMembersDropdown ? "Search Members" : "Search"}
-                                                autoFocus
                                                 className="flex-1 bg-transparent text-gray-800 text-[14px] outline-none min-w-0"
                                             />
 
@@ -1157,11 +1305,14 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                                 </div>
                             ) : (
                                 <>
-                                    <div className="relative h-screen bg-white   py-2">
+                                    <div className="relative h-[calc(100vh-17px)] bg-white   py-2">
                                         <div className="flex items-center gap-4 px-4 py-3 bg-white">
                                             <button
                                                 className="p-2 rounded-full hover:bg-gray-200 transition"
-                                                onClick={() => setPanelOpen(false)}
+                                                onClick={() => {
+                                                    const depth = window.history.state?.modalDepth || 1;
+                                                    window.history.go(-depth);
+                                                }}
                                             >
                                                 <MdOutlineClose className="h-6 w-6 text-gray-700" />
                                             </button>
@@ -1193,7 +1344,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                                                 </div>
                                             )}
                                         </div>
-                                        <div ref={scrollContainerRef} className="scrollbar-telegram overflow-y-auto h-[calc(100vh-75px)]">
+                                        <div ref={scrollContainerRef} className="scrollbar-telegram overflow-y-auto h-[calc(100dvh-90px)]">
                                             <div className="p-4 ">
                                                 <div className="mt-4 mb-4 flex flex-col items-center">
                                                     {(chat.contactType == "group" || chat.contactType == "channel") ? (
@@ -1297,375 +1448,400 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                                             <div className="h-4 bg-gray-100" />
 
                                             <div className="bg-white">
-                                                {/* Tab Bar */}
-                                                <div ref={tabBarRef} className="border-b border-gray-200 sticky top-0 bg-white z-10 w-full overflow-hidden">
-                                                    <AnimatePresence mode="wait">
-                                                        {isSelectionMode ? (
-                                                            <motion.div
-                                                                key="selection-header"
-                                                                initial={{ opacity: 0, y: -10 }}
-                                                                animate={{ opacity: 1, y: 0 }}
-                                                                exit={{ opacity: 0, y: -10 }}
-                                                                transition={{ duration: 0.2 }}
-                                                                className="flex items-center justify-between px-4 py-3 bg-white text-black w-full"
-                                                            >
-                                                                <div className="flex items-center gap-3">
-                                                                    <button onClick={() => setSelectedItems([])} className="p-1 hover:bg-gray-200 rounded-full transition-colors">
-                                                                        <MdOutlineClose size={24} />
-                                                                    </button>
-                                                                    <span className="font-medium text-[15px]">{selectedItems.length} Selected</span>
+                                                {!isAnimationFinished ? (
+                                                    <div className="animate-pulse p-4 flex flex-col gap-6 select-none">
+                                                        {/* Tab bar skeleton matching premium styling */}
+                                                        <div className="flex gap-4 border-b border-gray-200 pb-3">
+                                                            <div className="h-4 bg-gray-200 rounded-md w-20"></div>
+                                                            <div className="h-4 bg-gray-200 rounded-md w-16"></div>
+                                                            <div className="h-4 bg-gray-200 rounded-md w-24"></div>
+                                                        </div>
+                                                        {/* List items skeleton matching standard circular/line heights */}
+                                                        <div className="flex flex-col gap-4">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <div key={i} className="flex items-center gap-3">
+                                                                    <div className="w-10 h-10 bg-gray-200 rounded-full shrink-0"></div>
+                                                                    <div className="flex-1 flex flex-col gap-2">
+                                                                        <div className="h-4 bg-gray-200 rounded-md w-1/2"></div>
+                                                                        <div className="h-3 bg-gray-200 rounded-md w-1/3"></div>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex items-center gap-1">
-                                                                    <button onClick={() => {
-                                                                        const forwardDatas = selectedItems.map(item => ({
-                                                                            _id: item.messageId || item._id,
-                                                                            chatType: item.chatType,
-                                                                            forContact: item.forContact,
-                                                                            type: item.chatType,
-                                                                            url: item.url,
-                                                                            name: item.name,
-                                                                            senderName: item.senderName,
-                                                                            senderProfile: item.senderProfile,
-                                                                            time: item.time,
-                                                                            media: item.media || { _id: item.mediaItemId, url: item.url, name: item.name },
-                                                                            isForwardOne: false,
-                                                                            msg: item.msg,
-                                                                        }));
-                                                                        setForwardItem(forwardDatas);
-                                                                        setShowForward(true);
-                                                                        setSelectedItems([]);
-                                                                    }} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                                                                        <svg className="w-5 h-5 m-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 17 20 12 15 7"></polyline><path d="M4 18v-2a4 4 0 0 1 4-4h12"></path></svg>
-                                                                    </button>
-                                                                    {handleIsDeleteAllowed() && (
-                                                                        <button onClick={() => setShowDelete(true)} className="p-2 hover:bg-red-100 text-red-500 rounded-full transition-colors">
-                                                                            <svg className="w-5 h-5 m-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            </motion.div>
-                                                        ) : (
-                                                            <motion.div
-                                                                key="tabs-header"
-                                                                initial={{ opacity: 0 }}
-                                                                animate={{ opacity: 1 }}
-                                                                exit={{ opacity: 0 }}
-                                                                transition={{ duration: 0.2 }}
-                                                                className="flex relative w-full"
-                                                            >
-                                                                {infoTabs.map((tab) => {
-                                                                    const Icon = tab.icon;
-                                                                    return (
-                                                                        <button
-                                                                            key={tab.key}
-                                                                            onClick={() => handleInfoTabChange(tab.key)}
-                                                                            className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 text-xs font-medium transition-colors duration-200
-                                                                            ${activeInfoTab === tab.key ? 'text-blue-500' : 'text-gray-500 hover:text-gray-700'}`}
-                                                                        >
-                                                                            <Icon size={17} />
-                                                                            {tab.label}
-                                                                        </button>
-                                                                    );
-                                                                })}
-                                                                {/* Sliding underline indicator */}
-                                                                <motion.div
-                                                                    className="absolute bottom-0 h-[2px] bg-blue-500 rounded-full shadow-sm"
-                                                                    animate={{
-                                                                        left: `${activeInfoTabIndex * (100 / infoTabs.length) + (100 / infoTabs.length) * 0.1}%`,
-                                                                        width: `${(100 / infoTabs.length) * 0.8}%`,
-                                                                    }}
-                                                                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                                                                />
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </div>
-
-                                                {/* Tab Content */}
-                                                <div className="relative overflow-hidden" style={{ minHeight: 120 }}>
-                                                    <AnimatePresence initial={false} custom={infoTabDir}>
-                                                        <motion.div
-                                                            key={activeInfoTab}
-                                                            custom={infoTabDir}
-                                                            variants={tabContentVariants}
-                                                            initial="enter"
-                                                            animate="center"
-                                                            exit="exit"
-                                                            style={{ width: '100%', willChange: 'transform, opacity' }}
-                                                        >
-                                                            {/* Members */}
-                                                            {
-                                                                (chat.contactType == "group" || chat.contactType == "channel") && members !== null && activeInfoTab === 'members' && (
-                                                                    <List>
-                                                                        {members.map((member) => (
-                                                                            <ListItem
-                                                                                key={member._id}
-                                                                                className="flex justify-between items-center"
-                                                                            >
-                                                                                <div className="flex items-center space-x-3 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer transition-all">
-                                                                                    <UserAvatar    {...(member !== null && member.profile.type === 'image' && {
-                                                                                        image: member.profile
-                                                                                            .imageUrl,
-                                                                                    })}
-                                                                                        {...(member !== null && member.profile.type === 'emoji' && {
-                                                                                            emoji: member.profile.emoji,
-                                                                                            simpleBg: member.profile.bgColor,
-                                                                                        })}
-                                                                                        {...(member !== null && member.profile.type === 'initials' && {
-                                                                                            simpleBg: member.profile.bgColor,
-                                                                                            text: member.profile.initials,
-
-                                                                                        })} />
-                                                                                    <div className="flex flex-col gap-1">
-                                                                                        <span className="font-medium text-md flex items-center">
-                                                                                            {member.name} { }{member.lastName}
-                                                                                        </span>
-                                                                                        <span className="text-gray-600 text-sm font-body">
-                                                                                            {member.isOnline ? "Online" : formatLastSeen(member.lastSeen)}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                </div>
-                                                                                <ListItemSuffix>{getRoll(member._id)}</ListItemSuffix>
-                                                                            </ListItem>
-                                                                        ))}
-                                                                    </List>
-                                                                )}
-
-                                                            {/* Media - 3-col grid */}
-                                                            {activeInfoTab === 'media' && (() => {
-                                                                if (cachedMedia.length === 0) return (
-                                                                    <div className="flex flex-col items-center justify-center py-14 gap-3 text-gray-400">
-                                                                        <BsImages size={40} className="text-gray-300" />
-                                                                        <p className="text-sm">No media shared yet</p>
-                                                                    </div>
-                                                                );
-                                                                return (
-                                                                    <div className="grid grid-cols-3 gap-0.5">
-                                                                        {cachedMedia.map((item, idx) => (
-                                                                            <div
-                                                                                key={item._uid || idx}
-                                                                                className="aspect-square overflow-hidden bg-gray-100 relative cursor-pointer"
-                                                                                onClick={() => {
-                                                                                    if (isSelectionMode) {
-                                                                                        toggleSelection(item);
-                                                                                    } else {
-                                                                                        setMediaViewer({ items: cachedMedia, initialIndex: idx });
-                                                                                    }
-                                                                                }}
-                                                                                onContextMenu={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    setContextMenu({ x: e.clientX, y: e.clientY, item });
-                                                                                }}
-                                                                            >
-                                                                                {item.type === 'image' ? (
-                                                                                    <div className={`w-full h-full transition-transform duration-200 ${selectedItems.some(i => i._uid === item._uid) ? 'scale-90 rounded-lg overflow-hidden' : ''}`}>
-                                                                                        <SmoothImage src={item.url} className="w-full h-full object-cover hover:opacity-90" />
-                                                                                    </div>
-                                                                                ) : (
-                                                                                    <div className={`group w-full h-full relative transition-transform duration-200 ${selectedItems.some(i => i._uid === item._uid) ? 'scale-90 rounded-lg overflow-hidden' : ''}`}>
-                                                                                        {item.url?.includes('cloudinary.com/video/') ? (
-                                                                                            <SmoothImage src={item.url} alt="video thumbnail" className="w-full h-full object-cover group-hover:opacity-90" />
-                                                                                        ) : (
-                                                                                            <video src={item.url} preload="metadata" className="w-full h-full object-cover group-hover:opacity-90" muted playsInline />
-                                                                                        )}
-                                                                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                                                                            <div className="w-8 h-8 rounded-full bg-black/50 flex items-center justify-center transition-colors group-hover:bg-black/60">
-                                                                                                <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                )}
-                                                                                {selectedItems.some(i => i._uid === item._uid) && (
-                                                                                    <div className="absolute top-1.5 right-1.5 bg-green-500 rounded-full w-5 h-5 flex items-center justify-center border-2 border-white pointer-events-none">
-                                                                                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                                                                                    </div>
-                                                                                )}
-                                                                                {isSelectionMode && !selectedItems.some(i => i._uid === item._uid) && (
-                                                                                    <div className="absolute top-1.5 right-1.5 border-2 border-white/80 rounded-full w-5 h-5 pointer-events-none transition-opacity"></div>
-                                                                                )}
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                );
-                                                            })()}
-
-                                                            {/* Files - list with smart thumbnail */}
-                                                            {activeInfoTab === 'files' && (() => {
-                                                                if (cachedFiles.length === 0) return (
-                                                                    <div className="flex flex-col items-center justify-center py-14 gap-3 text-gray-400">
-                                                                        <BsFileEarmark size={40} className="text-gray-300" />
-                                                                        <p className="text-sm">No files shared yet</p>
-                                                                    </div>
-                                                                );
-                                                                return (
-                                                                    <div className="divide-y divide-gray-100">
-                                                                        {cachedFiles.map((file, idx) => (
-                                                                            <button
-                                                                                key={file._uid || idx}
-                                                                                className={`flex items-center gap-3 w-full px-4 py-2.5 transition-colors text-left ${selectedItems.some(i => i._uid === file._uid) ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
-                                                                                onClick={() => {
-                                                                                    if (isSelectionMode) {
-                                                                                        toggleSelection(file);
-                                                                                        return;
-                                                                                    }
-                                                                                    if (file.mediaType === 'image' || file.mediaType === 'video') {
-                                                                                        setMediaViewer({
-                                                                                            items: [{ type: file.mediaType, url: file.url, name: file.name, mediaItemId: file.mediaItemId, media: file.media, senderName: file.senderName, senderProfile: file.senderProfile, time: file.time, messageId: file.messageId, chatType: file.chatType, forContact: file.forContact, msg: file.msg }],
-                                                                                            initialIndex: 0
-                                                                                        });
-                                                                                    } else {
-                                                                                        handleFileDownload(file);
-                                                                                    }
-                                                                                }}
-                                                                                onContextMenu={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    setContextMenu({ x: e.clientX, y: e.clientY, item: file });
-                                                                                }}
-                                                                            >
-                                                                                {isSelectionMode && (
-                                                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedItems.some(i => i._uid === file._uid) ? 'border-white bg-green-500' : 'border-gray-300'}`}>
-                                                                                        {selectedItems.some(i => i._uid === file._uid) && (
-                                                                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                                                                                        )}
-                                                                                    </div>
-                                                                                )}
-                                                                                {/* Thumbnail or icon */}
-                                                                                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 relative">
-                                                                                    {file.mediaType === 'image' ? (
-                                                                                        <SmoothImage src={file.url} className="w-full h-full object-cover" />
-                                                                                    ) : file.mediaType === 'video' ? (
-                                                                                        <>
-                                                                                            {file.url?.includes('cloudinary.com/video/') ? (
-                                                                                                <SmoothImage src={file.url} alt="video thumbnail" className="w-full h-full object-cover" />
-                                                                                            ) : (
-                                                                                                <video src={file.url} preload="metadata" className="w-full h-full object-cover" muted playsInline />
-                                                                                            )}
-                                                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                                                                                <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                                                                                            </div>
-                                                                                        </>
-                                                                                    ) : (
-                                                                                        <div className="w-full h-full bg-blue-50 flex items-center justify-center">
-                                                                                            <BsFileEarmark size={22} className="text-blue-500" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    <p className="text-sm font-medium text-gray-800 truncate">{file.name}</p>
-                                                                                    <p className="text-xs text-gray-400 mt-0.5">
-                                                                                        {file.size ? `${formatFileSize(file.size)} · ` : ''}{formatItemTime(file.time)}
-                                                                                    </p>
-                                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        {/* Tab Bar */}
+                                                        <div ref={tabBarRef} className="border-b border-gray-200 sticky top-0 bg-white z-10 w-full overflow-hidden">
+                                                            <AnimatePresence mode="wait">
+                                                                {isSelectionMode ? (
+                                                                    <motion.div
+                                                                        key="selection-header"
+                                                                        initial={{ opacity: 0, y: -10 }}
+                                                                        animate={{ opacity: 1, y: 0 }}
+                                                                        exit={{ opacity: 0, y: -10 }}
+                                                                        transition={{ duration: 0.2 }}
+                                                                        className="flex items-center justify-between px-4 py-3 bg-white text-black w-full"
+                                                                    >
+                                                                        <div className="flex items-center gap-3">
+                                                                            <button onClick={() => setSelectedItems([])} className="p-1 hover:bg-gray-200 rounded-full transition-colors">
+                                                                                <MdOutlineClose size={24} />
                                                                             </button>
-                                                                        ))}
-                                                                    </div>
-                                                                );
-                                                            })()}
+                                                                            <span className="font-medium text-[15px]">{selectedItems.length} Selected</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1">
+                                                                            <button onClick={() => {
+                                                                                const forwardDatas = selectedItems.map(item => ({
+                                                                                    _id: item.messageId || item._id,
+                                                                                    chatType: item.chatType,
+                                                                                    forContact: item.forContact,
+                                                                                    type: item.chatType,
+                                                                                    url: item.url,
+                                                                                    name: item.name,
+                                                                                    senderName: item.senderName,
+                                                                                    senderProfile: item.senderProfile,
+                                                                                    time: item.time,
+                                                                                    media: item.media || { _id: item.mediaItemId, url: item.url, name: item.name },
+                                                                                    isForwardOne: false,
+                                                                                    msg: item.msg,
+                                                                                }));
+                                                                                setForwardItem(forwardDatas);
+                                                                                setShowForward(true);
+                                                                                setSelectedItems([]);
+                                                                            }} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                                                                                <svg className="w-5 h-5 m-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 17 20 12 15 7"></polyline><path d="M4 18v-2a4 4 0 0 1 4-4h12"></path></svg>
+                                                                            </button>
+                                                                            {handleIsDeleteAllowed() && (
+                                                                                <button onClick={() => setShowDelete(true)} className="p-2 hover:bg-red-100 text-red-500 rounded-full transition-colors">
+                                                                                    <svg className="w-5 h-5 m-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </motion.div>
+                                                                ) : (
+                                                                    <motion.div
+                                                                        key="tabs-header"
+                                                                        initial={{ opacity: 0 }}
+                                                                        animate={{ opacity: 1 }}
+                                                                        exit={{ opacity: 0 }}
+                                                                        transition={{ duration: 0.2 }}
+                                                                        className="flex relative w-full"
+                                                                    >
+                                                                        {infoTabs.map((tab) => {
+                                                                            const Icon = tab.icon;
+                                                                            return (
+                                                                                <button
+                                                                                    key={tab.key}
+                                                                                    onClick={() => handleInfoTabChange(tab.key)}
+                                                                                    className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 text-xs font-medium transition-colors duration-200
+                                                                                    ${activeInfoTab === tab.key ? 'text-blue-500' : 'text-gray-500 hover:text-gray-700'}`}
+                                                                                >
+                                                                                    <Icon size={17} />
+                                                                                    {tab.label}
+                                                                                </button>
+                                                                            );
+                                                                        })}
+                                                                        {/* Sliding underline indicator */}
+                                                                        <motion.div
+                                                                            className="absolute bottom-0 h-[2px] bg-blue-500 rounded-full shadow-sm"
+                                                                            animate={{
+                                                                                left: `${activeInfoTabIndex * (100 / infoTabs.length) + (100 / infoTabs.length) * 0.1}%`,
+                                                                                width: `${(100 / infoTabs.length) * 0.8}%`,
+                                                                            }}
+                                                                            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                                                                        />
+                                                                    </motion.div>
+                                                                )}
+                                                            </AnimatePresence>
+                                                        </div>
 
-                                                            {/* Music */}
-                                                            {activeInfoTab === 'music' && (() => {
-                                                                if (cachedMusic.length === 0) return (
-                                                                    <div className="flex flex-col items-center justify-center py-14 gap-3 text-gray-400">
-                                                                        <BsMusicNote size={40} className="text-gray-300" />
-                                                                        <p className="text-sm">No music shared yet</p>
-                                                                    </div>
-                                                                );
-                                                                return (
-                                                                    <div className="divide-y divide-gray-100">
-                                                                        {cachedMusic.map((track, idx) => (
-                                                                            <div key={track._uid || idx} className={`cursor-pointer flex items-center ${selectedItems.some(i => i._uid === track._uid) ? 'bg-blue-50/50' : ''}`} onClick={() => {
-                                                                                if (isSelectionMode) {
-                                                                                    toggleSelection(track);
-                                                                                } else {
-                                                                                    setMusicPlayer(track);
-                                                                                }
-                                                                            }} onContextMenu={(e) => {
-                                                                                e.preventDefault();
-                                                                                setContextMenu({ x: e.clientX, y: e.clientY, item: track });
-                                                                            }}>
-                                                                                {isSelectionMode && (
-                                                                                    <div className={`ml-4 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedItems.some(i => i._uid === track._uid) ? 'border-white bg-green-500' : 'border-gray-300'}`}>
-                                                                                        {selectedItems.some(i => i._uid === track._uid) && (
-                                                                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                                        {/* Tab Content */}
+                                                        <div className="relative overflow-hidden" style={{ minHeight: 120 }}>
+                                                            <AnimatePresence initial={false} custom={infoTabDir}>
+                                                                <motion.div
+                                                                    key={activeInfoTab}
+                                                                    custom={infoTabDir}
+                                                                    variants={tabContentVariants}
+                                                                    initial="enter"
+                                                                    animate="center"
+                                                                    exit="exit"
+                                                                    style={{ width: '100%', willChange: 'transform, opacity' }}
+                                                                >
+                                                                    {/* Members */}
+                                                                    {
+                                                                        (chat.contactType == "group" || chat.contactType == "channel") && members !== null && activeInfoTab === 'members' && (
+                                                                            <List>
+                                                                                {members.map((member) => (
+                                                                                    <ListItem
+                                                                                        key={member._id}
+                                                                                        className="flex justify-between items-center"
+                                                                                    >
+                                                                                        <div className="flex items-center space-x-3 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer transition-all">
+                                                                                            <UserAvatar    {...(member !== null && member.profile.type === 'image' && {
+                                                                                                image: member.profile
+                                                                                                    .imageUrl,
+                                                                                            })}
+                                                                                                {...(member !== null && member.profile.type === 'emoji' && {
+                                                                                                    emoji: member.profile.emoji,
+                                                                                                    simpleBg: member.profile.bgColor,
+                                                                                                })}
+                                                                                                {...(member !== null && member.profile.type === 'initials' && {
+                                                                                                    simpleBg: member.profile.bgColor,
+                                                                                                    text: member.profile.initials,
+
+                                                                                                })} />
+                                                                                            <div className="flex flex-col gap-1">
+                                                                                                <span className="font-medium text-md flex items-center">
+                                                                                                    {member.name} { }{member.lastName}
+                                                                                                </span>
+                                                                                                <span className="text-gray-600 text-sm font-body">
+                                                                                                    {member.isOnline ? "Online" : formatLastSeen(member.lastSeen)}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <ListItemSuffix>{getRoll(member._id)}</ListItemSuffix>
+                                                                                    </ListItem>
+                                                                                ))}
+                                                                            </List>
+                                                                        )}
+
+                                                                    {/* Media - 3-col grid */}
+                                                                    {activeInfoTab === 'media' && (() => {
+                                                                        if (cachedMedia.length === 0) return (
+                                                                            <div className="flex flex-col items-center justify-center py-14 gap-3 text-gray-400">
+                                                                                <BsImages size={40} className="text-gray-300" />
+                                                                                <p className="text-sm">No media shared yet</p>
+                                                                            </div>
+                                                                        );
+                                                                        return (
+                                                                            <div className="grid grid-cols-3 gap-0.5">
+                                                                                {cachedMedia.map((item, idx) => (
+                                                                                    <div
+                                                                                        key={item._uid || idx}
+                                                                                        className="aspect-square overflow-hidden bg-gray-100 relative cursor-pointer"
+                                                                                        onClick={() => {
+                                                                                            if (isSelectionMode) {
+                                                                                                toggleSelection(item);
+                                                                                            } else {
+                                                                                                setMediaViewer({ items: cachedMedia, initialIndex: idx });
+                                                                                            }
+                                                                                        }}
+                                                                                        onContextMenu={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            setContextMenu({ x: e.clientX, y: e.clientY, item });
+                                                                                        }}
+                                                                                    >
+                                                                                        {item.type === 'image' ? (
+                                                                                            <div className={`w-full h-full transition-transform duration-200 ${selectedItems.some(i => i._uid === item._uid) ? 'scale-90 rounded-lg overflow-hidden' : ''}`}>
+                                                                                                <SmoothImage src={item.url} className="w-full h-full object-cover hover:opacity-90" />
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <div className={`group w-full h-full relative transition-transform duration-200 ${selectedItems.some(i => i._uid === item._uid) ? 'scale-90 rounded-lg overflow-hidden' : ''}`}>
+                                                                                                {item.url?.includes('cloudinary.com/video/') ? (
+                                                                                                    <SmoothImage src={item.url} alt="video thumbnail" className="w-full h-full object-cover group-hover:opacity-90" />
+                                                                                                ) : (
+                                                                                                    <video src={item.url} preload="metadata" className="w-full h-full object-cover group-hover:opacity-90" muted playsInline />
+                                                                                                )}
+                                                                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                                                                    <div className="w-8 h-8 rounded-full bg-black/50 flex items-center justify-center transition-colors group-hover:bg-black/60">
+                                                                                                        <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {selectedItems.some(i => i._uid === item._uid) && (
+                                                                                            <div className="absolute top-1.5 right-1.5 bg-green-500 rounded-full w-5 h-5 flex items-center justify-center border-2 border-white pointer-events-none">
+                                                                                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {isSelectionMode && !selectedItems.some(i => i._uid === item._uid) && (
+                                                                                            <div className="absolute top-1.5 right-1.5 border-2 border-white/80 rounded-full w-5 h-5 pointer-events-none transition-opacity"></div>
                                                                                         )}
                                                                                     </div>
-                                                                                )}
-                                                                                <div className="flex-1 min-w-0 pointer-events-none">
-                                                                                    <MusicCard
-                                                                                        title={track.name}
-                                                                                        size={formatFileSize(track.size)}
-                                                                                        source="Audio"
-                                                                                        rightDate={formatItemTime(track.time)}
-                                                                                    />
-                                                                                </div>
+                                                                                ))}
                                                                             </div>
-                                                                        ))}
-                                                                    </div>
-                                                                );
-                                                            })()}
-                                                            {chat.contactType === 'person' && activeInfoTab === 'groups' && (
-                                                                <List>
-                                                                    {cachedCommonGroups.map((group) => (
-                                                                        <ListItem
-                                                                            key={group._id}
-                                                                            className="flex justify-between items-center"
-                                                                            onClick={() => {
-                                                                                setPanelOpen(false);
-                                                                                choose("Chat", group, null, null, null, null, null);
-                                                                            }}
-                                                                        >
-                                                                            <div className="flex items-center space-x-3 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer transition-all">
-                                                                                <UserAvatar
-                                                                                    {...(group.details?.profile?.type === 'image' && { image: group.details.profile.imageUrl })}
-                                                                                    {...(group.details?.profile?.type === 'emoji' && { emoji: group.details.profile.emoji, simpleBg: group.details.profile.bgColor })}
-                                                                                    {...(group.details?.profile?.type === 'initials' && { simpleBg: group.details.profile.bgColor, text: group.details.profile.initials })}
-                                                                                />
-                                                                                <div className="flex flex-col gap-1">
-                                                                                    <span className="font-medium text-md flex items-center">
-                                                                                        {group.name}
-                                                                                    </span>
-                                                                                    <span className="text-gray-600 text-sm font-body">
-                                                                                        {group.members?.length} members
-                                                                                    </span>
-                                                                                </div>
+                                                                        );
+                                                                    })()}
+
+                                                                    {/* Files - list with smart thumbnail */}
+                                                                    {activeInfoTab === 'files' && (() => {
+                                                                        if (cachedFiles.length === 0) return (
+                                                                            <div className="flex flex-col items-center justify-center py-14 gap-3 text-gray-400">
+                                                                                <BsFileEarmark size={40} className="text-gray-300" />
+                                                                                <p className="text-sm">No files shared yet</p>
                                                                             </div>
-                                                                        </ListItem>
-                                                                    ))}
-                                                                </List>
-                                                            )}
-                                                            {chat.contactType === 'person' && activeInfoTab === 'channels' && (
-                                                                <List>
-                                                                    {cachedCommonChannels.map((channel) => (
-                                                                        <ListItem
-                                                                            key={channel._id}
-                                                                            className="flex justify-between items-center"
-                                                                            onClick={() => {
-                                                                                setPanelOpen(false);
-                                                                                choose("Chat", channel, null, null, null, null, null);
-                                                                            }}
-                                                                        >
-                                                                            <div className="flex items-center space-x-3 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer transition-all">
-                                                                                <UserAvatar
-                                                                                    {...(channel.details?.profile?.type === 'image' && { image: channel.details.profile.imageUrl })}
-                                                                                    {...(channel.details?.profile?.type === 'emoji' && { emoji: channel.details.profile.emoji, simpleBg: channel.details.profile.bgColor })}
-                                                                                    {...(channel.details?.profile?.type === 'initials' && { simpleBg: channel.details.profile.bgColor, text: channel.details.profile.initials })}
-                                                                                />
-                                                                                <div className="flex flex-col gap-1">
-                                                                                    <span className="font-medium text-md flex items-center">
-                                                                                        {channel.name}
-                                                                                    </span>
-                                                                                    <span className="text-gray-600 text-sm font-body">
-                                                                                        {channel.members?.length} subscribers
-                                                                                    </span>
-                                                                                </div>
+                                                                        );
+                                                                        return (
+                                                                            <div className="divide-y divide-gray-100">
+                                                                                {cachedFiles.map((file, idx) => (
+                                                                                    <button
+                                                                                        key={file._uid || idx}
+                                                                                        className={`flex items-center gap-3 w-full px-4 py-2.5 transition-colors text-left ${selectedItems.some(i => i._uid === file._uid) ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
+                                                                                        onClick={() => {
+                                                                                            if (isSelectionMode) {
+                                                                                                toggleSelection(file);
+                                                                                                return;
+                                                                                            }
+                                                                                            if (file.mediaType === 'image' || file.mediaType === 'video') {
+                                                                                                setMediaViewer({
+                                                                                                    items: [{ type: file.mediaType, url: file.url, name: file.name, mediaItemId: file.mediaItemId, media: file.media, senderName: file.senderName, senderProfile: file.senderProfile, time: file.time, messageId: file.messageId, chatType: file.chatType, forContact: file.forContact, msg: file.msg }],
+                                                                                                    initialIndex: 0
+                                                                                                });
+                                                                                            } else {
+                                                                                                handleFileDownload(file);
+                                                                                            }
+                                                                                        }}
+                                                                                        onContextMenu={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            setContextMenu({ x: e.clientX, y: e.clientY, item: file });
+                                                                                        }}
+                                                                                    >
+                                                                                        {isSelectionMode && (
+                                                                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedItems.some(i => i._uid === file._uid) ? 'border-white bg-green-500' : 'border-gray-300'}`}>
+                                                                                                {selectedItems.some(i => i._uid === file._uid) && (
+                                                                                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {/* Thumbnail or icon */}
+                                                                                        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 relative">
+                                                                                            {file.mediaType === 'image' ? (
+                                                                                                <SmoothImage src={file.url} className="w-full h-full object-cover" />
+                                                                                            ) : file.mediaType === 'video' ? (
+                                                                                                <>
+                                                                                                    {file.url?.includes('cloudinary.com/video/') ? (
+                                                                                                        <SmoothImage src={file.url} alt="video thumbnail" className="w-full h-full object-cover" />
+                                                                                                    ) : (
+                                                                                                        <video src={file.url} preload="metadata" className="w-full h-full object-cover" muted playsInline />
+                                                                                                    )}
+                                                                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                                                                                        <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                                                                                    </div>
+                                                                                                </>
+                                                                                            ) : (
+                                                                                                <div className="w-full h-full bg-blue-50 flex items-center justify-center">
+                                                                                                    <BsFileEarmark size={22} className="text-blue-500" />
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <div className="flex-1 min-w-0">
+                                                                                            <p className="text-sm font-medium text-gray-800 truncate">{file.name}</p>
+                                                                                            <p className="text-xs text-gray-400 mt-0.5">
+                                                                                                {file.size ? `${formatFileSize(file.size)} · ` : ''}{formatItemTime(file.time)}
+                                                                                            </p>
+                                                                                        </div>
+                                                                                    </button>
+                                                                                ))}
                                                                             </div>
-                                                                        </ListItem>
-                                                                    ))}
-                                                                </List>
-                                                            )}
-                                                        </motion.div>
-                                                    </AnimatePresence>
-                                                </div>
+                                                                        );
+                                                                    })()}
+
+                                                                    {/* Music */}
+                                                                    {activeInfoTab === 'music' && (() => {
+                                                                        if (cachedMusic.length === 0) return (
+                                                                            <div className="flex flex-col items-center justify-center py-14 gap-3 text-gray-400">
+                                                                                <BsMusicNote size={40} className="text-gray-300" />
+                                                                                <p className="text-sm">No music shared yet</p>
+                                                                            </div>
+                                                                        );
+                                                                        return (
+                                                                            <div className="divide-y divide-gray-100">
+                                                                                {cachedMusic.map((track, idx) => (
+                                                                                    <div key={track._uid || idx} className={`cursor-pointer flex items-center ${selectedItems.some(i => i._uid === track._uid) ? 'bg-blue-50/50' : ''}`} onClick={() => {
+                                                                                        if (isSelectionMode) {
+                                                                                            toggleSelection(track);
+                                                                                        } else {
+                                                                                            setMusicPlayer(track);
+                                                                                        }
+                                                                                    }} onContextMenu={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        setContextMenu({ x: e.clientX, y: e.clientY, item: track });
+                                                                                    }}>
+                                                                                        {isSelectionMode && (
+                                                                                            <div className={`ml-4 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedItems.some(i => i._uid === track._uid) ? 'border-white bg-green-500' : 'border-gray-300'}`}>
+                                                                                                {selectedItems.some(i => i._uid === track._uid) && (
+                                                                                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        )}
+                                                                                        <div className="flex-1 min-w-0 pointer-events-none">
+                                                                                            <MusicCard
+                                                                                                title={track.name}
+                                                                                                size={formatFileSize(track.size)}
+                                                                                                source="Audio"
+                                                                                                rightDate={formatItemTime(track.time)}
+                                                                                            />
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        );
+                                                                    })()}
+                                                                    {chat.contactType === 'person' && activeInfoTab === 'groups' && (
+                                                                        <List>
+                                                                            {cachedCommonGroups.map((group) => (
+                                                                                <ListItem
+                                                                                    key={group._id}
+                                                                                    className="flex justify-between items-center"
+                                                                                    onClick={() => {
+                                                                                        setPanelOpen(false);
+                                                                                        choose("Chat", group, null, null, null, null, null);
+                                                                                    }}
+                                                                                >
+                                                                                    <div className="flex items-center space-x-3 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer transition-all">
+                                                                                        <UserAvatar
+                                                                                            {...(group.details?.profile?.type === 'image' && { image: group.details.profile.imageUrl })}
+                                                                                            {...(group.details?.profile?.type === 'emoji' && { emoji: group.details.profile.emoji, simpleBg: group.details.profile.bgColor })}
+                                                                                            {...(group.details?.profile?.type === 'initials' && { simpleBg: group.details.profile.bgColor, text: group.details.profile.initials })}
+                                                                                        />
+                                                                                        <div className="flex flex-col gap-1">
+                                                                                            <span className="font-medium text-md flex items-center">
+                                                                                                {group.name}
+                                                                                            </span>
+                                                                                            <span className="text-gray-600 text-sm font-body">
+                                                                                                {group.members?.length} members
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </ListItem>
+                                                                            ))}
+                                                                        </List>
+                                                                    )}
+                                                                    {chat.contactType === 'person' && activeInfoTab === 'channels' && (
+                                                                        <List>
+                                                                            {cachedCommonChannels.map((channel) => (
+                                                                                <ListItem
+                                                                                    key={channel._id}
+                                                                                    className="flex justify-between items-center"
+                                                                                    onClick={() => {
+                                                                                        setPanelOpen(false);
+                                                                                        choose("Chat", channel, null, null, null, null, null);
+                                                                                    }}
+                                                                                >
+                                                                                    <div className="flex items-center space-x-3 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer transition-all">
+                                                                                        <UserAvatar
+                                                                                            {...(channel.details?.profile?.type === 'image' && { image: channel.details.profile.imageUrl })}
+                                                                                            {...(channel.details?.profile?.type === 'emoji' && { emoji: channel.details.profile.emoji, simpleBg: channel.details.profile.bgColor })}
+                                                                                            {...(channel.details?.profile?.type === 'initials' && { simpleBg: channel.details.profile.bgColor, text: channel.details.profile.initials })}
+                                                                                        />
+                                                                                        <div className="flex flex-col gap-1">
+                                                                                            <span className="font-medium text-md flex items-center">
+                                                                                                {channel.name}
+                                                                                            </span>
+                                                                                            <span className="text-gray-600 text-sm font-body">
+                                                                                                {channel.members?.length} subscribers
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </ListItem>
+                                                                            ))}
+                                                                        </List>
+                                                                    )}
+                                                                </motion.div>
+                                                            </AnimatePresence>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
 
 

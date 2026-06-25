@@ -42,6 +42,8 @@ const MessegeBubble = ({
 }) => {
     const { addIdToSeenBy, contactsWithOtherMember, contacts, addContactById, backendUser } = useContext(AuthContext);
     const navigate = useNavigate();
+
+
     const [loadingContact, setLoadingContact] = useState(false);
     useEffect(() => {
         if (chat != null && msg.forContact.toString() === chat._id.toString()) {
@@ -164,20 +166,20 @@ const MessegeBubble = ({
                             title={`View profile: ${username}`}
                             onClick={(e) => {
                                 if (username === backendUser.username) return;
-                                
 
 
-                                
+
+
                                 const existingContact = contactsWithOtherMember.find(contact => {
                                     if (contact.contactType === "person" && contact.otherMember[0]._id.username === username) {
                                         return contact;
                                     }
                                 })
-                                
+
                                 if (existingContact !== undefined) {
                                     window.dispatchEvent(new CustomEvent('navigate-to-chat', { detail: { contact: existingContact } }));
                                 } else {
-                                    
+
 
                                     e.stopPropagation();
                                     navigate(`/${username}`);
@@ -207,7 +209,7 @@ const MessegeBubble = ({
 
                                 if (contactId === chat._id) return;
 
-                                
+
 
 
                                 const existingContact = contactsWithOtherMember.find(contact => {
@@ -215,11 +217,11 @@ const MessegeBubble = ({
                                         return contact;
                                     }
                                 })
-                                
+
                                 if (existingContact !== undefined) {
                                     window.dispatchEvent(new CustomEvent('navigate-to-chat', { detail: { contact: existingContact } }));
                                 } else {
-                                    
+
 
                                     e.stopPropagation();
                                     navigate(`/+${contactId}`);
@@ -501,7 +503,7 @@ const MessegeBubble = ({
                     // const contactProfile = msg.contactDetails?.Id;
 
                     const contactInitial = (msg.contactDetails?.name || '?').charAt(0).toUpperCase();
-                    
+
                     return (
                         <div className="px-3 pt-2.5 pb-1 flex flex-col">
                             <div className="flex items-center gap-3">
@@ -668,4 +670,15 @@ const MessegeBubble = ({
     );
 };
 
-export default MessegeBubble;
+export default React.memo(MessegeBubble, (prev, next) => {
+    return prev.msg._id === next.msg._id &&
+        prev.msg._isPending === next.msg._isPending &&
+        prev.msg._isError === next.msg._isError &&
+        prev.msg.content === next.msg.content &&
+        prev.msg.caption === next.msg.caption &&
+        prev.msg.reactions?.length === next.msg.reactions?.length &&
+        prev.isSent === next.isSent &&
+        prev.searchQuery === next.searchQuery &&
+        prev.msg.seenBy?.length === next.msg.seenBy?.length &&
+        prev.msg.isDeleted === next.msg.isDeleted;
+});

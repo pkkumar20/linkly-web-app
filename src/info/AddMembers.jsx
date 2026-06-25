@@ -300,7 +300,7 @@ export default function AddMembers({ back, member, chat }) {
             {isSearching === false && (
                 <div
                     id="scrollable-content"
-                    className="w-full scrollbar-telegram overflow-y-auto h-[calc(100vh-130px)] "
+                    className="w-full scrollbar-telegram overflow-y-auto h-[calc(100dvh-130px)] "
                 >
                     <List>
                         {
@@ -372,7 +372,7 @@ export default function AddMembers({ back, member, chat }) {
             {isSearching === true && (
                 <div
                     id="scrollable-content"
-                    className="w-full scrollbar-telegram overflow-y-auto h-[calc(100vh-165px)]"
+                    className="w-full scrollbar-telegram overflow-y-auto h-[calc(100dvh-165px)]"
                 >
                     <List>
                         {filtered.map((contact) => (
@@ -501,7 +501,7 @@ export default function AddMembers({ back, member, chat }) {
                             justifyContent: 'center',
                             alignItems: 'center',
                             zIndex: 1000,
-                            height: '100vh',
+                            height: '100dvh',
                             pointerEvents: 'none' // Allows clicking through the wrapper
                         }}
                     >

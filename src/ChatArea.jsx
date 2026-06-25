@@ -1,22 +1,24 @@
 import './scrollbar.css';
-import EmojiPicker from 'emoji-picker-react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useContext, useCallback, useMemo } from "react";
 import { Spinner } from "@material-tailwind/react";
 import MessegeBubble from "./MessegeBubble";
-import Lottie from 'lottie-react';
 import myAnimation from "./lottie/Wave.json"
 import ClipIconPopOver from "./ClipIconPopOver";
 import MediaPreviewPopup from "./MediaPreviewPopup";
 import ForwardPopup from "./ForwardPopup";
 import DeleteMultiplePopup from "./DeleteMultiplePopup";
 import toast from "react-hot-toast";
-import { useState, useRef, useEffect, useLayoutEffect, useContext, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { AuthContext } from "./firebase hooks/AuthContext";
 import { FaPaperPlane } from "react-icons/fa";
 import { BiWinkSmile } from "react-icons/bi";
 import InfoScreen from "./info/InfoScreen";
-import LocationPicker from "./LocationPicker";
+
+// Lazy-loaded heavy components (only loaded when needed)
+const LazyEmojiPicker = React.lazy(() => import('emoji-picker-react'));
+const LazyLottie = React.lazy(() => import('lottie-react'));
+const LazyLocationPicker = React.lazy(() => import('./LocationPicker'));
 import { format, isToday, isYesterday, isThisYear } from 'date-fns';
 import { GoCheckCircle } from "react-icons/go";
 import { BsReply } from "react-icons/bs";
@@ -50,7 +52,7 @@ const getFirstMedia = (msg) => {
     }
     return null;
 };
-export default function ChatArea({ isChatSelected, back, contactData, choose, autoChatSendData, resetAutoSentChat, forwardMessagesData, setForwardMessagesData, isNavbarHidden }) {
+export default function ChatArea({ isChatSelected, back, contactData, choose, autoChatSendData, resetAutoSentChat, forwardMessagesData, setForwardMessagesData, isNavbarHidden, isMobile }) {
     const { sendImagesInChanel, sendVideosInChanel, sendDocumentsInChanel, sendImagesInChat, sendVideosInChat, sendDocumentsInChat, sendReply, sendTextMessage, sendLocationMessage, sendContactMessage, getGroupMessages, sendMessageInGroup, sendMessageInChannel, currentChatData, backendUser, sendMessage, newMessege, setCCd, deleteMsg, contacts, rstUnread, handleChat, loadOlderMessages, forwardMessages, forwardOneMedia, forwardSelectedMedia, deleteMultipleMessages, toggleReaction, unBlockPerson } = useContext(AuthContext);
     const [message, setMessage] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
@@ -60,19 +62,17 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     const [calendarViewDate, setCalendarViewDate] = useState(new Date());
     const [tempSelectedDate, setTempSelectedDate] = useState(new Date());
     const [selectedUserFilter, setSelectedUserFilter] = useState(null);
-    
     // Performance optimization: only render latest messages during slide-in animation
-    const [isAnimating, setIsAnimating] = useState(window.innerWidth < 1024);
+    const [isAnimating, setIsAnimating] = useState(isMobile);
     useEffect(() => {
-        const isMobile = window.innerWidth < 1024;
         if (isMobile) {
             setIsAnimating(true);
-            const timer = setTimeout(() => setIsAnimating(false), 350);
+            const timer = setTimeout(() => setIsAnimating(false), 200);
             return () => clearTimeout(timer);
         } else {
             setIsAnimating(false);
         }
-    }, [contactData?._id]);
+    }, [contactData?._id, isMobile]);
     useEffect(() => {
         setSearchQuery("");
         setHighlightDate("");
@@ -88,7 +88,8 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         if (panelOpen) {
             if (!isInfoPushedRef.current) {
                 isInfoPushedRef.current = true;
-                window.history.pushState({ infoOpen: true }, '', window.location.pathname + window.location.hash + "?info=true");
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, infoOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash + "?info=true");
             }
         } else {
             if (isInfoPushedRef.current) {
@@ -113,14 +114,11 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
 
     useEffect(() => {
         return () => {
-            // Clean up history state if unmounted while panel is open
-            if (isInfoPushedRef.current && window.history.state?.infoOpen) {
-                window.history.back();
-            }
+            // Unmount cleanup disabled to prevent history.back() lag
         };
     }, []);
 
-    const [chat, setChat] = useState(contactData);
+    const chat = contactData;
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showForwardPopup, setShowForwardPopup] = useState(false);
     const [showDeleteMultiplePopup, setShowDeleteMultiplePopup] = useState(false);
@@ -133,6 +131,78 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     const [showLocationPicker, setShowLocationPicker] = useState(false);
     const [showContactPicker, setShowContactPicker] = useState(false);
 
+    const isLocationPushedRef = useRef(false);
+    const isContactPushedRef = useRef(false);
+
+    // Sync showContactPicker state with history to support browser back button
+    useEffect(() => {
+        if (showContactPicker) {
+            if (!isContactPushedRef.current) {
+                isContactPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, contactPickerOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash);
+            }
+        } else {
+            if (isContactPushedRef.current) {
+                isContactPushedRef.current = false;
+                if (window.history.state?.contactPickerOpen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [showContactPicker]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (showContactPicker && !e.state?.contactPickerOpen) {
+                isContactPushedRef.current = false;
+                setShowContactPicker(false);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [showContactPicker]);
+
+    useEffect(() => {
+        return () => {
+            // Unmount cleanup disabled
+        };
+    }, []);
+
+    // Sync showLocationPicker state with history to support browser back button
+    useEffect(() => {
+        if (showLocationPicker) {
+            if (!isLocationPushedRef.current) {
+                isLocationPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, locationPickerOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash);
+            }
+        } else {
+            if (isLocationPushedRef.current) {
+                isLocationPushedRef.current = false;
+                if (window.history.state?.locationPickerOpen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [showLocationPicker]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (showLocationPicker && !e.state?.locationPickerOpen) {
+                isLocationPushedRef.current = false;
+                setShowLocationPicker(false);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [showLocationPicker]);
+
+    useEffect(() => {
+        return () => {
+            // Unmount cleanup disabled
+        };
+    }, []);
 
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
     const [loadingOlder, setLoadingOlder] = useState(false);
@@ -313,45 +383,17 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     useEffect(() => {
         if (!contactData || !contacts.length) return;
 
-        const sortedContacts = [...contacts].sort((a, b) => {
-            const timeA = new Date(a.lastMessage?.time || a.updatedAt || 0);
-            const timeB = new Date(b.lastMessage?.time || b.updatedAt || 0);
-            return timeB - timeA;
-        });
-
-        const contact = sortedContacts.find(c => c._id.toString() === contactData._id);
+        const contact = contacts.find(c => c._id.toString() === contactData._id);
         if (contact) {
-            const processedContacts = () => {
-                const otherMembers = contact.members?.filter(
-                    member => member._id?._id !== backendUser?._id
-                ) || [];
-                return {
-                    ...contact,
-                    otherMember: otherMembers,
-                    lastMessage: contact.lastMessage
-                };
-            };
-
-            if (contact.contactType === "group") {
-                setChat(contact);
-            } else if (contact.contactType === "person") {
-                setChat(processedContacts());
-            } else if (contact.contactType === "channel") {
-                setChat(contact);
-            }
-            const unreadValue = contact.members.find(
-                member => member._id._id.toString() === backendUser._id.toString()
+            const unreadValue = contact.members?.find(
+                member => (member._id?._id || member._id)?.toString() === backendUser?._id?.toString()
             );
-            if (contact && contact._id && unreadValue?.unread > 0 && lastMarkedReadRef.current !== contact._id) {
-
+            if (unreadValue?.unread > 0 && lastMarkedReadRef.current !== contact._id) {
                 lastMarkedReadRef.current = contact._id;
                 rstUnread(contact._id, backendUser._id);
             }
-
-        } else {
-            return;
         }
-    }, [contacts, contactData, backendUser]);
+    }, [contacts, contactData, backendUser, rstUnread]);
 
     useEffect(() => {
         totalMessagesRef.current = currentChatData.length;
@@ -602,10 +644,10 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         return noneAllowed;
     };
 
-    const permissions = getPermissions();
+    const permissions = useMemo(() => getPermissions(), [chat, backendUser]);
 
     const handleRetrySend = async (pendingId, retryParams) => {
-        
+
         // Set the message back to pending status
         setCCd(prev => prev.map(m => m._id === pendingId ? {
             ...m,
@@ -613,7 +655,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
             _isError: false,
             _uploadProgress: 0,
         } : m));
-        
+
 
         if (retryParams.type === "text") {
             try {
@@ -1339,7 +1381,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         if (localImages.length > 0) pendingChatType = 'image';
         else if (localVideos.length > 0) pendingChatType = 'video';
         else pendingChatType = 'document';
-        
+
 
         // Create the optimistic pending message
         const pendingMsg = {
@@ -1639,9 +1681,9 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         }
     };
 
-    if (!isChatSelected) return null;
-    const ContactsWithOtherMember = () => {
-        const prContacts = contacts.map((contact) => {
+
+    const contactsWithOtherMember = useMemo(() => {
+        return contacts.map((contact) => {
             if (contact.contactType === "person") {
                 const otherMember = contact.members?.filter(
                     member => member._id?._id.toString() !== backendUser?._id.toString()
@@ -1654,9 +1696,16 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
             }
             return contact;
         });
-        return prContacts;
+    }, [contacts, backendUser]);
 
-    }
+    // Stable callback for MessegeBubble choose prop — prevents re-renders of memoized bubbles
+    const bubbleChoose = useCallback((w, ...args) => {
+        if (w && typeof w === 'object' && w.to) {
+            choose(w.to, w.user, null, null, null, null, w.forwardMessages);
+        } else {
+            choose(w, ...args);
+        }
+    }, [choose]);
 
 
     const infoPanelVariants = {
@@ -1664,6 +1713,8 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         visible: { x: 0 },
         exit: { x: "100%" },
     };
+    if (!isChatSelected) return null;
+
     return (
         <div
             className="h-full w-full flex flex-col relative"
@@ -1838,7 +1889,9 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                                 </p>
                             </div>
                             <div className="flex justify-center my-4">
-                                <Lottie animationData={myAnimation} loop={true} style={{ height: 264, width: 300 }} />
+                                <React.Suspense fallback={<div style={{ height: 264, width: 300 }} />}>
+                                    <LazyLottie animationData={myAnimation} loop={true} style={{ height: 264, width: 300 }} />
+                                </React.Suspense>
                             </div>
                         </div>
                     </div>
@@ -1932,14 +1985,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                                                 )}
                                                 {chatMsg.chatType !== "label" && (
                                                     <MessegeBubble
-                                                        choose={(w, ...args) => {
-
-                                                            if (w && typeof w === 'object' && w.to) {
-                                                                choose(w.to, w.user, null, null, null, null, w.forwardMessages);
-                                                            } else {
-                                                                choose(w, ...args);
-                                                            }
-                                                        }}
+                                                        choose={bubbleChoose}
                                                         msg={chatMsg}
                                                         chat={chat}
                                                         text={chatMsg.content}
@@ -2202,7 +2248,9 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                     zIndex: 1100, borderRadius: "12px", width: PICKER_WIDTH, height: PICKER_HEIGHT,
                     overflow: "hidden", pointerEvents: "auto", backgroundColor: "#fff", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
                 }}>
-                    <EmojiPicker previewConfig={{ showPreview: false }} onEmojiClick={(e) => handleQuickReaction(e.emoji)} theme="light" width="100%" height="100%" searchPlaceholder="Search emoji..." />
+                    <React.Suspense fallback={<div style={{ width: '100%', height: '100%' }} />}>
+                        <LazyEmojiPicker previewConfig={{ showPreview: false }} onEmojiClick={(e) => handleQuickReaction(e.emoji)} theme="light" width="100%" height="100%" searchPlaceholder="Search emoji..." />
+                    </React.Suspense>
                 </div>
             )}
 
@@ -2378,7 +2426,9 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                                     margin: '0 auto',
                                 }}
                             >
-                                <EmojiPicker previewConfig={{ showPreview: false }} skinTonesDisabled={true} onEmojiClick={handleEmojiClick} theme="light" width="100%" height="100%" searchDisabled={window.innerWidth < 640} />
+                                <React.Suspense fallback={<div style={{ width: '100%', height: '100%' }} />}>
+                                    <LazyEmojiPicker previewConfig={{ showPreview: false }} skinTonesDisabled={true} onEmojiClick={handleEmojiClick} theme="light" width="100%" height="100%" searchDisabled={window.innerWidth < 640} />
+                                </React.Suspense>
                             </div>
                         )}
 
@@ -2412,10 +2462,12 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
 
             <AnimatePresence>
                 {showLocationPicker && (
-                    <LocationPicker
-                        onClose={() => setShowLocationPicker(false)}
-                        onSend={handleSendLocation}
-                    />
+                    <React.Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 999 }} />}>
+                        <LazyLocationPicker
+                            onClose={() => setShowLocationPicker(false)}
+                            onSend={handleSendLocation}
+                        />
+                    </React.Suspense>
                 )}
             </AnimatePresence>
 
@@ -2438,7 +2490,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                     contextForwardRef.current = null;
                 }}
                 contacts={
-                    ContactsWithOtherMember()
+                    contactsWithOtherMember
                 }
                 backendUser={backendUser}
                 onContactClick={(user) => {
@@ -2834,7 +2886,7 @@ function ContactPickerPopup({ contacts, backendUser, onClose, onSelect }) {
     );
 }
 
-const DateLabel = ({ dateText, onClick }) => (
+const DateLabel = React.memo(({ dateText, onClick }) => (
     <div className="select-none w-full flex justify-center my-3">
         <div
             onClick={onClick}
@@ -2844,7 +2896,7 @@ const DateLabel = ({ dateText, onClick }) => (
             {dateText}
         </div>
     </div>
-);
+));
 
 function MenuItem({ onClick, icon, text, danger }) {
     return (

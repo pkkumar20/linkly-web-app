@@ -1,4 +1,6 @@
-const Avatar = ({
+import React from 'react';
+
+const Avatar = React.memo(({
     size = "w-12 h-12",
     textSize = "text-lg",
     image,
@@ -35,5 +37,5 @@ const Avatar = ({
             )}
         </div>
     );
-};
+});
 export default Avatar;

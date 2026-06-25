@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react'
+import React, { useState, useContext, useEffect, useRef } from 'react'
 import {
     List,
     Typography,
@@ -25,7 +25,82 @@ function AdministrationScreen({ Screen, chat }) {
         }
     })
     const [popupOpen, setPopupOpen] = useState(false);
+
+    const isAdminPopupPushedRef = useRef(false);
+
+    // Sync popupOpen state with history
+    useEffect(() => {
+        if (popupOpen) {
+            if (!isAdminPopupPushedRef.current) {
+                isAdminPopupPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, adminPopupOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash);
+            }
+        } else {
+            if (isAdminPopupPushedRef.current) {
+                isAdminPopupPushedRef.current = false;
+                if (window.history.state?.adminPopupOpen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [popupOpen]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (popupOpen && !e.state?.adminPopupOpen) {
+                isAdminPopupPushedRef.current = false;
+                setPopupOpen(false);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [popupOpen]);
+
+    useEffect(() => {
+        return () => {
+            // Unmount cleanup disabled to prevent history lag
+        };
+    }, []);
+
     const [screen, setScreen] = useState('main');
+
+    const isAdminScreenPushedRef = useRef(false);
+
+    // Sync screen state with history
+    useEffect(() => {
+        if (screen !== 'main') {
+            if (!isAdminScreenPushedRef.current) {
+                isAdminScreenPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, adminScreenSub: screen, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash);
+            }
+        } else {
+            if (isAdminScreenPushedRef.current) {
+                isAdminScreenPushedRef.current = false;
+                if (window.history.state?.adminScreenSub) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [screen]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (screen !== 'main' && !e.state?.adminScreenSub) {
+                isAdminScreenPushedRef.current = false;
+                setScreen('main');
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [screen]);
+
+    useEffect(() => {
+        return () => {
+            // Unmount cleanup disabled to prevent history lag
+        };
+    }, []);
     const [showFab, setShowFab] = useState(true);
     const [selected, setSelected] = useState(null);
     const [filtered, setFiltered] = useState([]);
@@ -121,7 +196,7 @@ function AdministrationScreen({ Screen, chat }) {
             setIsSearching(false);
             setSearch("")
         } else {
-            
+
             const fd = new FormData();
 
             fd.append("userId", userId);
@@ -129,7 +204,7 @@ function AdministrationScreen({ Screen, chat }) {
             if (chat.contactType === "group") {
                 const res = await addAdmin(fd);
                 if (res.status === 200) {
-                    
+
                     setSelected(res.data.adminData)
 
                     setScreen('second')
@@ -143,7 +218,7 @@ function AdministrationScreen({ Screen, chat }) {
                 fd.append("channelId", chatId);
                 const res = await addAdminInChanel(fd);
                 if (res.status === 200) {
-                    
+
                     setSelected(res.data.adminData)
 
                     setScreen('second')
@@ -187,7 +262,7 @@ function AdministrationScreen({ Screen, chat }) {
                             <input placeholder='Search...' type="text" className='bg-white w-full h-8 focus:outline-none' value={search} onChange={(e) => handleSerch(e.target.value)} />
                         </div>
                         <div className="h-4 bg-gray-100" />
-                        <div className="bg-white scrollbar-telegram overflow-y-auto h-[calc(100vh-40px)] pt-2" >
+                        <div className="bg-white scrollbar-telegram overflow-y-auto h-[calc(100dvh-40px)] pt-2" >
 
                             {(chat !== null && chat.admins.length > 0 && isSearching === false) && (
                                 <List>
@@ -200,7 +275,7 @@ function AdministrationScreen({ Screen, chat }) {
                                                 setIsSearching(false);
                                                 setSearch("")
                                             }}
-                                            key={chat.id}
+                                            key={admin._id}
                                             className="flex justify-between items-center"
                                         >
                                             <div className="flex items-center space-x-3 py-1 px-1  rounded cursor-pointer transition-all">

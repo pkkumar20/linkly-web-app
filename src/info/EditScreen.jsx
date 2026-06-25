@@ -1,5 +1,5 @@
 import '../scrollbar.css';
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import { AuthContext } from '../firebase hooks/AuthContext';
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,6 +60,43 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
     const [intinal, setIntial] = useState(true);
     const [intinalValue, setIntialValue] = useState("");
     const color = chatData.details.profile.bgColor;
+
+    const screenPushedRef = useRef(false);
+
+    // Sync screen state with history
+    useEffect(() => {
+        if (screen !== 'main') {
+            if (!screenPushedRef.current) {
+                screenPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, editSubScreen: screen, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash);
+            }
+        } else {
+            if (screenPushedRef.current) {
+                screenPushedRef.current = false;
+                if (window.history.state?.editSubScreen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [screen]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (screen !== 'main' && !e.state?.editSubScreen) {
+                screenPushedRef.current = false;
+                setScreen('main');
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [screen]);
+
+    useEffect(() => {
+        return () => {
+            // Unmount cleanup disabled to prevent history lag
+        };
+    }, []);
 
     const totalActive = Object.values(chatData.membersPermissions).filter(value => value === true).length;
     const totalKeys = Object.keys(chatData.membersPermissions).length;
@@ -275,7 +312,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                             {chatData.contactType == "channel" && ("Edit Channel Info")}
                         </Typography>
                     </div>
-                    <div className="scrollbar-telegram overflow-y-auto h-[calc(100vh-65px)]">
+                    <div className="scrollbar-telegram overflow-y-auto h-[calc(100dvh-65px)]">
                         {showInput === true && (
                             <div className="p-4 bg-white">
                                 <div className="mt-4">

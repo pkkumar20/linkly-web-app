@@ -24,6 +24,43 @@ function MemberScreen({ Screen, chat, choose, onShare }) {
     const [showFab, setShowFab] = useState(true);
     const [openMenuId, setOpenMenuId] = useState(null); // Track which menu is open
     const [openAdddContact, setOpenAddContact] = useState(false);
+
+    const isAddMemberPushedRef = useRef(false);
+
+    // Sync openAdddContact state with history
+    useEffect(() => {
+        if (openAdddContact) {
+            if (!isAddMemberPushedRef.current) {
+                isAddMemberPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, memberAddContactOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash);
+            }
+        } else {
+            if (isAddMemberPushedRef.current) {
+                isAddMemberPushedRef.current = false;
+                if (window.history.state?.memberAddContactOpen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [openAdddContact]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (openAdddContact && !e.state?.memberAddContactOpen) {
+                isAddMemberPushedRef.current = false;
+                setOpenAddContact(false);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [openAdddContact]);
+
+    useEffect(() => {
+        return () => {
+            // Unmount cleanup disabled to prevent history lag
+        };
+    }, []);
     const [filtered, setFiltered] = useState([]);
     const [search, setSearch] = useState("");
     const [isSearching, setIsSearching] = useState(false);

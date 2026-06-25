@@ -244,6 +244,43 @@ const VideoMessage = memo(({ choose, msg, chat, videos, isPending, isSent, sende
 
     const [viewerState, setViewerState] = useState({ isOpen: false, index: 0 });
 
+    const isViewerPushedRef = useRef(false);
+
+    // Sync viewerState with history
+    useEffect(() => {
+        if (viewerState.isOpen) {
+            if (!isViewerPushedRef.current) {
+                isViewerPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState({ ...window.history.state, mediaViewerOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash);
+            }
+        } else {
+            if (isViewerPushedRef.current) {
+                isViewerPushedRef.current = false;
+                if (window.history.state?.mediaViewerOpen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [viewerState.isOpen]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (viewerState.isOpen && !e.state?.mediaViewerOpen) {
+                isViewerPushedRef.current = false;
+                setViewerState(prev => ({ ...prev, isOpen: false }));
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [viewerState.isOpen]);
+
+    useEffect(() => {
+        return () => {
+            // Unmount cleanup disabled to prevent history lag
+        };
+    }, []);
+
     const [showOverlay, setShowOverlay] = useState(isPending || isError);
     const wasPending = useRef(isPending);
     useEffect(() => {
