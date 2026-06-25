@@ -1049,7 +1049,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
 
                         {/* Main Info Panel */}
                         <motion.div
-                            className="select-none fixed   right-0 top-0 h-[100dvh] bg-gray-100 shadow-xl z-40 w-full md:w-96"
+                            className="select-none fixed   right-0 top-0 h-full  bg-white shadow-xl z-40 w-full md:w-96"
                             variants={infoPanelVariants}
                             initial="hidden"
                             animate="visible"
@@ -1556,7 +1556,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                                                         </div>
 
                                                         {/* Tab Content */}
-                                                        <div className="relative overflow-hidden" style={{ minHeight: 120 }}>
+                                                        <div className=" relative overflow-hidden" style={{ minHeight: 120 }}>
                                                             <AnimatePresence initial={false} custom={infoTabDir}>
                                                                 <motion.div
                                                                     key={activeInfoTab}
@@ -1566,6 +1566,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                                                                     animate="center"
                                                                     exit="exit"
                                                                     style={{ width: '100%', willChange: 'transform, opacity' }}
+
                                                                 >
                                                                     {/* Members */}
                                                                     {
@@ -1849,7 +1850,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                                         </div>
                                     </div>
                                     {(chat.contactType == "group" || chat.contactType == "channel" && showFab === true) && (
-                                        <div className="flex justify-end px-5 py-2">
+                                        <div className=" flex justify-end  px-2">
                                             <AnimatePresence exitBeforeEnter>
                                                 <motion.button
                                                     onClick={() => {
