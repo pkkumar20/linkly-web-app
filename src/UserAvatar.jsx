@@ -29,11 +29,11 @@ const Avatar = React.memo(({
             {image ? (
                 <img src={image} alt="avatar" className="object-cover w-full h-full" />
             ) : emoji ? (
-                <span className={`leading-none inline-flex items-center justify-center ${emojiSize || 'text-2xl'}`}>{emoji}</span>
+                <span className={`w-full h-full flex items-center justify-center ${emojiSize || 'text-2xl'}`} style={{ lineHeight: 1 }}>{emoji}</span>
             ) : text ? (
-                <span className={`font-semibold text-white leading-none inline-flex items-center justify-center ${textSize}`}>{text}</span>
+                <span className={`w-full h-full flex items-center justify-center font-semibold text-white ${textSize}`} style={{ lineHeight: 1 }}>{text}</span>
             ) : (
-                <span className="text-2xl text-white leading-none inline-flex items-center justify-center">🙂</span>
+                <span className="w-full h-full flex items-center justify-center text-2xl text-white" style={{ lineHeight: 1 }}>🙂</span>
             )}
         </div>
     );
