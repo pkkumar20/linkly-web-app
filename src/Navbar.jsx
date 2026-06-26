@@ -778,7 +778,7 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
   return (
     <>
       {/* Parent wrapper */}
-      <div className="select-none font-telegram relative h-screen bg-white py-2">
+      <div className="select-none font-telegram relative h-[100dvh] bg-white py-2">
 
         {/* Header row: flex with Sidebar + right-aligned input */}
         <div className="flex items-center  justify-between">

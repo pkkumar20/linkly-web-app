@@ -7,7 +7,7 @@ function ViewInfo() {
    
  
     return (
-      <div className='h-screen w-screen ' style={{
+      <div className='h-[100dvh] w-screen overflow-hidden' style={{
           background: `url('${bg}')`, backgroundSize: "cover",
           backgroundPosition: "center",
       }}>

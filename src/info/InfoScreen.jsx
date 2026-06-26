@@ -1049,12 +1049,12 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
 
                         {/* Main Info Panel */}
                         <motion.div
-                            className="select-none fixed   right-0 top-0 h-full  bg-white shadow-xl z-40 w-full md:w-96"
+                            className="select-none fixed right-0 top-0 h-full bg-white shadow-xl z-40 w-full md:w-96 overflow-hidden"
                             variants={infoPanelVariants}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            transition={{ type: "spring", stiffness: 250, damping: 28 }}
+                            transition={{ type: "spring", stiffness: 250, damping: 35 }}
                             onAnimationComplete={() => {
                                 if (panelOpen) {
                                     setIsAnimationFinished(true);
@@ -1878,12 +1878,12 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                             {isEditScreenOpen && (
                                 <motion.div
                                     key="edit-panel"
-                                    className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96"
+                                    className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96 overflow-hidden"
                                     variants={editPanelVariants}
                                     initial="hidden"
                                     animate="visible"
                                     exit="exit"
-                                    transition={{ type: "spring", stiffness: 250, damping: 28 }}
+                                    transition={{ type: "spring", stiffness: 250, damping: 35 }}
                                     style={{ pointerEvents: "auto" }}
                                 >
                                     <EditScreen
@@ -1899,13 +1899,13 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                             )}
                             {openAddContact && (
                                 <motion.div
-                                    key="edit-panel"
-                                    className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96"
+                                    key="add-members-panel"
+                                    className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96 overflow-hidden"
                                     variants={editPanelVariants}
                                     initial="hidden"
                                     animate="visible"
                                     exit="exit"
-                                    transition={{ type: "spring", stiffness: 250, damping: 28 }}
+                                    transition={{ type: "spring", stiffness: 250, damping: 35 }}
                                     style={{ pointerEvents: "auto" }}
                                 >
                                     <AddMembers back={() => {

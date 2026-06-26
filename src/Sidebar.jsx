@@ -71,7 +71,7 @@ export function Sidebar() {
       </IconButton>
 
       <Drawer open={isDrawerOpen} onClose={closeDrawer} className="">
-        <Card className={`${isDrawerOpen?"right-0":"right-20"} w-[100%] h-screen  p-4 overflow-y-auto shadow-xl rounded-none `}>
+        <Card className={`${isDrawerOpen?"right-0":"right-20"} w-[100%] h-[100dvh]  p-4 overflow-y-auto shadow-xl rounded-none `}>
           {/* Header */}
           {currentMenu === "main" && (
             <>

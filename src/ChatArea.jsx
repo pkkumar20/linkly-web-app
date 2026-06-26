@@ -2256,7 +2256,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
 
             {/* Bottom Section: Input OR Selection Toolbar */}
             {selectedMessages.length > 0 ? (
-                <div className="mb-1 relative flex items-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-1">
+                <div className="mb-1 relative flex items-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent pt-1 pb-[env(safe-area-inset-bottom,4px)]">
                     <div className="flex justify-between items-center flex-1 bg-white rounded-xl px-4 py-2 shadow-sm min-w-0">
                         <div className="flex items-center gap-4">
                             <button onClick={() => setSelectedMessages([])} className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
@@ -2286,13 +2286,13 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                     </div>
                 </div>
             ) : getBlockStatus() === 'blocked_by_other' ? (
-                <div className="mb-1 relative flex items-center justify-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-1">
+                <div className="mb-1 relative flex items-center justify-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent pt-1 pb-[env(safe-area-inset-bottom,4px)]">
                     <div className="w-full bg-white/80 backdrop-blur-sm rounded-xl py-3.5 px-4 shadow-sm text-center text-gray-500 text-sm font-medium border border-gray-100 select-none">
                         You cannot send messages to this user.
                     </div>
                 </div>
             ) : getBlockStatus() === 'blocked_by_me' ? (
-                <div className="mb-1 relative flex items-center justify-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-1">
+                <div className="mb-1 relative flex items-center justify-center lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent pt-1 pb-[env(safe-area-inset-bottom,4px)]">
                     <div className="w-full bg-white/80 backdrop-blur-sm rounded-xl py-3.5 px-4 shadow-sm text-center text-gray-500 text-sm font-medium border border-gray-100 select-none flex items-center justify-center gap-2">
                         <span>You blocked this user.</span>
                         <button
@@ -2313,7 +2313,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 </div>
             ) : (permissions.canSendText || permissions.canSendMedia) ?
                 (
-                    <div className=" mb-1 relative flex items-end lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-1 gap-1">
+                    <div className="mb-1 relative flex items-end lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent pt-1 pb-[env(safe-area-inset-bottom,4px)] gap-1">
                         {/* Main Input Wrapper */}
                         <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm min-w-0">
                             {/* Reply Snippet UI */}

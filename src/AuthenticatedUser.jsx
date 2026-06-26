@@ -614,7 +614,7 @@ function AuthenticatedUser() {
   return (
 
     <div
-      className="h-screen w-full flex overflow-hidden bg-gradient-to-br from-[#8faab9] via-[#a3c2ce] to-[#8faab9]">
+      className="h-[100dvh] w-full flex overflow-hidden bg-gradient-to-br from-[#8faab9] via-[#a3c2ce] to-[#8faab9]">
 
       {/* Sidebar/card for navbar/screens */}
       <Card
@@ -645,7 +645,7 @@ function AuthenticatedUser() {
       {/* Chat Area */}
 
 
-      <div className={`h-full flex-1 max-h-screen overflow-y-auto`} style={{
+      <div className={`h-full flex-1 max-h-[100dvh] overflow-hidden relative`} style={{
         backgroundColor: "#8faab9",
         backgroundImage: `url('${bg}')`,
         backgroundSize: "cover",

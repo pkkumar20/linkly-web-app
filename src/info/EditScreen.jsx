@@ -290,7 +290,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
         >
             {/* Main panel: always visible, no animation */}
             <div
-                className="fixed right-0 top-0 h-full bg-white shadow-2xl  w-full md:w-96"
+                className="absolute inset-0 bg-white shadow-2xl w-full"
                 style={{
 
                     zIndex: screen === "main" ? 40 : 30, // lower than admin if hidden
@@ -603,12 +603,12 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                     {screen === "groupType" && (
                         <motion.div
                             key="groupType"
-                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96"
+                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96 overflow-hidden"
                             variants={adminVariants}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            transition={{ type: "spring", stiffness: 250, damping: 28 }}
+                            transition={{ type: "spring", stiffness: 250, damping: 35 }}
                         >
                             <GroupType Screen={(e) => setScreen(e)} chat={chatData} />
                         </motion.div>
@@ -618,12 +618,12 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                     {screen === 'inviteLink' && (
                         <motion.div
                             key='inviteLink'
-                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96"
+                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96 overflow-hidden"
                             variants={adminVariants}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            transition={{ type: "spring", stiffness: 250, damping: 28 }}
+                            transition={{ type: "spring", stiffness: 250, damping: 35 }}
                         >
                             <InviteLinkScreen
                                 onShare={() => {
@@ -637,13 +637,13 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                 <AnimatePresence>
                     {screen === 'administration' && (
                         <motion.div
-                            key='inviteLink'
-                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96"
+                            key='administration'
+                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96 overflow-hidden"
                             variants={adminVariants}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            transition={{ type: "spring", stiffness: 250, damping: 28 }}
+                            transition={{ type: "spring", stiffness: 250, damping: 35 }}
                         >
                             <AdministrationScreen Screen={(e) => setScreen(e)} chat={chatData} />
                         </motion.div>
@@ -652,13 +652,13 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                 <AnimatePresence>
                     {screen === 'member' && (
                         <motion.div
-                            key='inviteLink'
-                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96"
+                            key='member'
+                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96 overflow-hidden"
                             variants={adminVariants}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            transition={{ type: "spring", stiffness: 250, damping: 28 }}
+                            transition={{ type: "spring", stiffness: 250, damping: 35 }}
                         >
                             <MemberScreen Screen={(e) => setScreen(e)} chat={chatData} choose={onSendInviteLink
                             } onShare={onShare} />
@@ -668,13 +668,13 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                 <AnimatePresence>
                     {screen === 'permisions' && (
                         <motion.div
-                            key='inviteLink'
-                            className="fixed right-0 top-0 h-full bg-gray-100 shadow-2xl z-50 w-full md:w-96"
+                            key='permisions'
+                            className="fixed right-0 top-0 h-full bg-gray-100 shadow-2xl z-50 w-full md:w-96 overflow-hidden"
                             variants={adminVariants}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            transition={{ type: "spring", stiffness: 250, damping: 28 }}
+                            transition={{ type: "spring", stiffness: 250, damping: 35 }}
                         >
                             <Permissions Screen={(e) => setScreen(e)} chat={chatData} />
                         </motion.div>
@@ -683,13 +683,13 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                 <AnimatePresence>
                     {screen === 'removedUser' && (
                         <motion.div
-                            key='inviteLink'
-                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96"
+                            key='removedUser'
+                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96 overflow-hidden"
                             variants={adminVariants}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            transition={{ type: "spring", stiffness: 250, damping: 28 }}
+                            transition={{ type: "spring", stiffness: 250, damping: 35 }}
                         >
                             <RemovedUSersScreen Screen={(e) => setScreen(e)} chat={chatData} />
                         </motion.div>

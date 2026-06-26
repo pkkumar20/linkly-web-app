@@ -418,12 +418,12 @@ function AdministrationScreen({ Screen, chat }) {
                     {screen === "second" && (
                         <motion.div
                             key="groupType"
-                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96"
+                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96 overflow-hidden"
                             variants={adminVariants}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            transition={{ type: "spring", stiffness: 250, damping: 28 }}
+                            transition={{ type: "spring", stiffness: 250, damping: 35 }}
                         >
                             <AdminPanel Screen={(e) => setScreen(e)} chat={chat} selectedAdmin={selected} />
                         </motion.div>

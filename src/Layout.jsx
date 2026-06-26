@@ -6,7 +6,7 @@ export default function Layout() {
   const [activeChat, setActiveChat] = useState(null);
 
   return (
-    <div className="h-screen flex">
+    <div className="h-[100dvh] flex overflow-hidden">
       {/* Sidebar */}
       <div
         className={`
