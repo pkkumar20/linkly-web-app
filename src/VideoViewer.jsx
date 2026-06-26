@@ -77,6 +77,36 @@ export default function VideoViewer({ choose, chatId, msg, videos, initialIndex 
         setTimeout(onClose, 250);
     }, [phase, onClose]);
 
+    // Sync browser history state for closing on back button
+    const triggerCloseRef = useRef(triggerClose);
+    useEffect(() => {
+        triggerCloseRef.current = triggerClose;
+    }, [triggerClose]);
+
+    useEffect(() => {
+        const currentDepth = window.history.state?.modalDepth || 0;
+        window.history.pushState(
+            { ...window.history.state, viewerOpen: true, modalDepth: currentDepth + 1 },
+            '',
+            window.location.pathname + window.location.hash
+        );
+
+        const handlePopState = (e) => {
+            if (!e.state?.viewerOpen) {
+                triggerCloseRef.current();
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+            if (window.history.state?.viewerOpen) {
+                window.history.back();
+            }
+        };
+    }, []);
+
     // ── Keyboard ─────────────────────────────────────────────────────────
     useEffect(() => {
         const onKey = (e) => {
