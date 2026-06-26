@@ -2313,7 +2313,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 </div>
             ) : (permissions.canSendText || permissions.canSendMedia) ?
                 (
-                    <div className="mb-1 relative flex items-end lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-1 gap-1">
+                    <div className=" mb-1 relative flex items-end lg:px-16 md:px-10 sm:px-4 px-3 bg-transparent py-1 gap-1">
                         {/* Main Input Wrapper */}
                         <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm min-w-0">
                             {/* Reply Snippet UI */}

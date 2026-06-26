@@ -99,7 +99,7 @@ function MemberChip({ member, onRemove, }) {
                     </svg>
                 </button>
             </span>
-            <span className="pr-2 text-sm font-medium">
+            <span className="pr-2 text-sm font-medium truncate max-w-[120px]">
                 {member.otherMember[0].nickName ? (member.otherMember[0].
                     nickLastName ? (member.otherMember[0].nickName + " " + member.otherMember[0].
                         nickLastName) : (member.otherMember[0].nickName)) : (
@@ -262,8 +262,8 @@ export default function AddMembers({ back, member, chat }) {
         setLoading(false);
     }
     return (
-        <>
-            <div className="bg-gray-100">
+        <div className="absolute inset-0 flex flex-col bg-white overflow-hidden">
+            <div className="bg-gray-100 flex-shrink-0">
                 <div className="bg-white flex-col ">
                     <div className="flex items-center gap-2 px-4 py-3 ">
                         <button
@@ -295,12 +295,12 @@ export default function AddMembers({ back, member, chat }) {
 
 
             </div>
-            <div className="h-3 bg-gray-100" />
+            <div className="h-3 bg-gray-100 flex-shrink-0" />
             {/* lg:h-[calc(100vh-160px) */}
             {isSearching === false && (
                 <div
                     id="scrollable-content"
-                    className="w-full scrollbar-telegram overflow-y-auto h-[calc(100dvh-130px)] "
+                    className="w-full scrollbar-telegram overflow-y-auto flex-grow min-h-0"
                 >
                     <List>
                         {
@@ -308,39 +308,41 @@ export default function AddMembers({ back, member, chat }) {
                                 <ListItem
                                     onClick={() => toggleMember(contact)}
                                     key={contact._id}
-                                    className="flex justify-between items-center"
+                                    className="flex justify-between items-center w-full"
                                 >
-                                    <div className="flex items-center space-x-3 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer transition-all">
+                                    <div className="flex items-center space-x-3 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer transition-all min-w-0 flex-1">
                                         <Checkbox
                                             ripple={false}
-                                            className="h-6 w-6 rounded-full border-gray-900/20 bg-gray-900/10 transition-all hover:scale-105 hover:before:opacity-0"
+                                            className="h-6 w-6 rounded-full border-gray-900/20 bg-gray-900/10 transition-all hover:scale-105 hover:before:opacity-0 flex-shrink-0"
                                             checked={selected.some((m) => m._id === contact._id)}
                                             onChange={() => toggleMember(contact)}
                                         />
-                                        <UserAvatar    {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'image' && {
-                                            image: contact.otherMember[0]._id.profile.imageUrl,
-                                        })}
-                                            {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'emoji' && {
-                                                emojiSize: "text-3xl",
-                                                emoji: contact.otherMember[0]._id.profile
-                                                    .emoji,
-                                                simpleBg: contact.otherMember[0]._id.profile
-                                                    .bgColor,
+                                        <div className="flex-shrink-0">
+                                            <UserAvatar    {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'image' && {
+                                                image: contact.otherMember[0]._id.profile.imageUrl,
                                             })}
-                                            {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'initials' && {
-                                                simpleBg: contact.otherMember[0]._id.profile
-                                                    .bgColor,
-                                                text: contact.otherMember[0].nickName ? (contact.otherMember[0].
-                                                    nickLastName ? (contact.otherMember[0].nickName[0].toUpperCase() + contact.otherMember[0].
-                                                        nickLastName[0].toUpperCase()) : (contact.otherMember[0].nickName[0].toUpperCase())) : (contact.otherMember[0]._id.profile
-                                                            .initials),
+                                                {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'emoji' && {
+                                                    emojiSize: "text-3xl",
+                                                    emoji: contact.otherMember[0]._id.profile
+                                                        .emoji,
+                                                    simpleBg: contact.otherMember[0]._id.profile
+                                                        .bgColor,
+                                                })}
+                                                {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'initials' && {
+                                                    simpleBg: contact.otherMember[0]._id.profile
+                                                        .bgColor,
+                                                    text: contact.otherMember[0].nickName ? (contact.otherMember[0].
+                                                        nickLastName ? (contact.otherMember[0].nickName[0].toUpperCase() + contact.otherMember[0].
+                                                            nickLastName[0].toUpperCase()) : (contact.otherMember[0].nickName[0].toUpperCase())) : (contact.otherMember[0]._id.profile
+                                                                .initials),
 
-                                            })} />
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-md flex items-center">
+                                                })} />
+                                        </div>
+                                        <div className="flex flex-col min-w-0 flex-1">
+                                            <span className="font-medium text-md flex items-center truncate">
                                                 {contact.otherMember[0].nickName ? (contact.otherMember[0].nickLastName ? (formatName(contact.otherMember[0].nickName) + " " + formatName(contact.otherMember[0].nickLastName)) : (formatName(contact.otherMember[0].nickName))) : (contact.otherMember[0]._id.name)}
                                             </span>
-                                            <span className="text-gray-500 text-sm">last seen recently</span>
+                                            <span className="text-gray-500 text-sm truncate">last seen recently</span>
                                         </div>
                                     </div>
                                 </ListItem>
@@ -372,7 +374,7 @@ export default function AddMembers({ back, member, chat }) {
             {isSearching === true && (
                 <div
                     id="scrollable-content"
-                    className="w-full scrollbar-telegram overflow-y-auto h-[calc(100dvh-165px)]"
+                    className="w-full scrollbar-telegram overflow-y-auto flex-grow min-h-0"
                 >
                     <List>
                         {filtered.map((contact) => (
@@ -380,40 +382,42 @@ export default function AddMembers({ back, member, chat }) {
                                 onClick={() => toggleMember(contact)
                                 }
                                 key={contact._id}
-                                className="flex justify-between items-center"
+                                className="flex justify-between items-center w-full"
                             >
-                                <div className="flex items-center space-x-3 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer transition-all">
+                                <div className="flex items-center space-x-3 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer transition-all min-w-0 flex-1">
                                     <Checkbox
                                         ripple={false}
-                                        className="h-6 w-6 rounded-full border-gray-900/20 bg-gray-900/10 transition-all hover:scale-105 hover:before:opacity-0"
+                                        className="h-6 w-6 rounded-full border-gray-900/20 bg-gray-900/10 transition-all hover:scale-105 hover:before:opacity-0 flex-shrink-0"
                                         checked={selected.some((m) => m._id === contact._id)}
                                         onChange={() => toggleMember(contact)}
                                     />
-                                    <UserAvatar    {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'image' && {
-                                        image: contact.otherMember[0]._id.profile.imageUrl,
-                                    })}
-                                        {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'emoji' && {
-                                            emojiSize: "text-3xl",
-                                            emoji: contact.otherMember[0]._id.profile
-                                                .emoji,
-                                            simpleBg: contact.otherMember[0]._id.profile
-                                                .bgColor,
+                                    <div className="flex-shrink-0">
+                                        <UserAvatar    {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'image' && {
+                                            image: contact.otherMember[0]._id.profile.imageUrl,
                                         })}
-                                        {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'initials' && {
-                                            simpleBg: contact.otherMember[0]._id.profile
-                                                .bgColor,
-                                            text: contact.otherMember[0].nickName ? (contact.otherMember[0].
-                                                nickLastName ? (contact.otherMember[0].nickName[0].toUpperCase() + contact.otherMember[0].
-                                                    nickLastName[0].toUpperCase()) : (contact.otherMember[0].nickName[0].toUpperCase())) : (contact.otherMember[0]._id.profile
-                                                        .initials),
+                                            {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'emoji' && {
+                                                emojiSize: "text-3xl",
+                                                emoji: contact.otherMember[0]._id.profile
+                                                    .emoji,
+                                                simpleBg: contact.otherMember[0]._id.profile
+                                                    .bgColor,
+                                            })}
+                                            {...(contact.otherMember[0]._id !== null && contact.otherMember[0]._id.profile.type === 'initials' && {
+                                                simpleBg: contact.otherMember[0]._id.profile
+                                                    .bgColor,
+                                                text: contact.otherMember[0].nickName ? (contact.otherMember[0].
+                                                    nickLastName ? (contact.otherMember[0].nickName[0].toUpperCase() + contact.otherMember[0].
+                                                        nickLastName[0].toUpperCase()) : (contact.otherMember[0].nickName[0].toUpperCase())) : (contact.otherMember[0]._id.profile
+                                                            .initials),
 
-                                        })} />
-                                    <div className="flex flex-col">
-                                        <span className="font-medium text-md flex items-center">
+                                            })} />
+                                    </div>
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="font-medium text-md flex items-center truncate">
 
                                             {contact.otherMember[0].nickName ? (contact.otherMember[0].nickLastName ? (formatName(contact.otherMember[0].nickName) + " " + formatName(contact.otherMember[0].nickLastName)) : (formatName(contact.otherMember[0].nickName))) : (contact.otherMember[0]._id.name)}
                                         </span>
-                                        <span className="text-gray-500 text-sm">last seen recently</span>
+                                        <span className="text-gray-500 text-sm truncate">last seen recently</span>
                                     </div>
                                 </div>
                             </ListItem>
@@ -453,24 +457,23 @@ export default function AddMembers({ back, member, chat }) {
                     )}
                 </div>
             )}
-            {showFab && (
-                <div className="flex justify-end px-5 py-2">
-                    <AnimatePresence exitBeforeEnter>
-                        <motion.button
-                            disabled={loading}
-                            onClick={() => handleFab()} className="fixed bottom-7  w-14 h-14 bg-blue-600 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700" // removed transition
-                            aria-label="Save"
-                            variants={fabVariants}
-                            initial="hidden"
-                            animate="visible"
-                            exit="hidden"
-                            style={{ willChange: "transform, opacity", zIndex: 50 }}
-                        >
-                            <RiUserAddLine size={28} className='text-white' />
-                        </motion.button>
-                    </AnimatePresence>
-                </div>
-            )}
+            <AnimatePresence exitBeforeEnter>
+                {showFab && (
+                    <motion.button
+                        disabled={loading}
+                        onClick={() => handleFab()}
+                        className="fixed bottom-7 right-7 w-14 h-14 bg-blue-600 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700"
+                        aria-label="Save"
+                        variants={fabVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        style={{ willChange: "transform, opacity", zIndex: 50 }}
+                    >
+                        <RiUserAddLine size={28} className='text-white' />
+                    </motion.button>
+                )}
+            </AnimatePresence>
             <AnimatePresence>
                 {popupOpen && (
                     <motion.div
@@ -518,7 +521,7 @@ export default function AddMembers({ back, member, chat }) {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </>
+        </div>
     );
 }
 import UserAvatar2 from "../UserAvatar2";
@@ -561,7 +564,7 @@ function Popup({ isOpen, onClose, chat, members, membersNames, back }) {
                 if (res.status == 409) {
                     toast.error("Already joined the channel")
                 } else {
-                    
+
                     onClose();
                     back();
                     toast.success("Added sucessfully")
@@ -571,7 +574,7 @@ function Popup({ isOpen, onClose, chat, members, membersNames, back }) {
             } else if (chat.contactType === "group") {
                 const res = await addManyUserInGroupById(fd);
 
-                
+
                 onClose();
                 back();
                 toast.success("Added sucessfully")
