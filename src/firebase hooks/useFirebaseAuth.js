@@ -24,7 +24,7 @@ function useFirebaseAuth() {
   const [selctedContact, setSelectedContact] = useState(null);
   // ✅ FIXED REDUCER: Proper chat creation + move to top logic
   const serverUrl = import.meta.env.VITE_SERVER_URL;
-  
+
 
   const recentChatsReducer = (state, action) => {
     switch (action.type) {
@@ -125,6 +125,34 @@ function useFirebaseAuth() {
       //   (a, b) => new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0),
       // );
 
+      case "DELETE_MESSAGE":
+        return state.map((chat) => {
+          if (
+            chat.forContact?.toString() === action.chatId.toString() ||
+            chat._id?.toString() === action.chatId.toString()
+          ) {
+            return {
+              ...chat,
+              messages: chat.messages ? chat.messages.filter((m) => m._id !== action.msgId) : [],
+            };
+          }
+          return chat;
+        });
+
+      case "DELETE_MULTIPLE_MESSAGES":
+        return state.map((chat) => {
+          if (
+            chat.forContact?.toString() === action.chatId.toString() ||
+            chat._id?.toString() === action.chatId.toString()
+          ) {
+            return {
+              ...chat,
+              messages: chat.messages ? chat.messages.filter((m) => !action.msgIds.includes(m._id)) : [],
+            };
+          }
+          return chat;
+        });
+
       case "RESET":
         return [];
       default:
@@ -138,7 +166,7 @@ function useFirebaseAuth() {
 
   // ✅ Safe socket connection
   async function connectSocket() {
-    
+
 
     const user = auth.currentUser;
     if (!user) throw new Error("Not logged in");
@@ -249,7 +277,7 @@ function useFirebaseAuth() {
     });
     return () => unsubscribe();
   }, []);
-  
+
 
   // --- EFFECT 2: SOCKET CONNECTION (DEPENDS ON BACKEND USER) ---
   useEffect(() => {
@@ -264,18 +292,18 @@ function useFirebaseAuth() {
           setSocket(currentSocket);
 
           currentSocket.on("connect", () => {
-            
+
             refetchRecentChats();
           });
 
           currentSocket.on("receiveMessage", handleMessageCreted);
           currentSocket.on("messageCreted", (data, chatId) => {
-            
+
             handleMessageCreted(data, chatId);
           });
 
           currentSocket.on("messageUp", (message, id) => {
-            
+
             dispatchRecentChats({
               type: "ADD_UPDATE_MESSAGE",
               chatId: id.id,
@@ -311,10 +339,10 @@ function useFirebaseAuth() {
 
                 // If the chat list is empty OR the message belongs to the current chat, append it
                 if (!currentContactId || !msgContactId || currentContactId === msgContactId) {
-                  
+
                   return [...prev, message].sort((a, b) => new Date(a.time) - new Date(b.time));
                 } else {
-                  
+
                 }
               }
 
@@ -324,7 +352,7 @@ function useFirebaseAuth() {
 
 
           currentSocket.on("messageUpdated", (data, id) => {
-            
+
             dispatchRecentChats({
               type: "UPDATE_MESSAGES_BY_CHAT",
               chatId: id.id,
@@ -348,7 +376,7 @@ function useFirebaseAuth() {
           });
 
           currentSocket.on("oneMessageUpdated", (data, id) => {
-            
+
             dispatchRecentChats({
               type: "UPDATE_ONE_MESSAGE",
               chatId: id.id,
@@ -358,7 +386,7 @@ function useFirebaseAuth() {
           });
 
           currentSocket.on("userStatusUpdate", (data) => {
-            
+
 
             if (data.data) {
               setBackendUser(data.data);
@@ -368,7 +396,7 @@ function useFirebaseAuth() {
           });
 
           currentSocket.on("userUpdated", (data) => {
-            
+
             setBackendUser(data);
             setContacts(data.contacts || []);
             setNotifiaction(data.notifiaction || []);
@@ -396,7 +424,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("MemberPermissionUpdated", (data) => {
-            
+
             setContacts((prev) =>
               prev.map((item) =>
                 item._id.toString() === data._id.toString()
@@ -406,7 +434,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("channelUpdated", (data) => {
-            
+
             setContacts((prev) =>
               prev.map((item) =>
                 item._id.toString() === data._id.toString()
@@ -416,7 +444,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("groupUpdated", (data) => {
-            
+
 
             setContacts((prev) =>
               prev.map((item) =>
@@ -427,7 +455,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("personUpdated", (data) => {
-            
+
 
             setContacts((prev) =>
               prev.map((item) =>
@@ -438,7 +466,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("contactUpdated", (data) => {
-            
+
 
             setContacts((prev) =>
               prev.map((item) =>
@@ -449,7 +477,7 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("notificationUpdated", (data) => {
-            
+
             setNotifiaction((prev) =>
               prev.map((item) =>
                 item._id.toString() === data._id.toString()
@@ -459,13 +487,13 @@ function useFirebaseAuth() {
             );
           });
           currentSocket.on("notificationDeleted", (data) => {
-            
+
             setNotifiaction((prev) =>
               prev.filter((item) => item._id.toString() !== data.toString()),
             );
           });
           currentSocket.on("contactAdded", (data) => {
-            
+
 
             setContacts((prev) => {
               // 1. Check if the contact already exists in the list
@@ -487,7 +515,7 @@ function useFirebaseAuth() {
             refetchRecentChats();
           });
           currentSocket.on("notification", (data) => {
-            
+
             setNotifiaction((prev) => {
               // 1. Check if the contact already exists in the list
               const notificationExists = prev.some(
@@ -1157,8 +1185,8 @@ function useFirebaseAuth() {
   const blockPerson = async (contactId, blockedUserId) => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      
-      
+
+
 
       const res = await axios.post(
         `${serverUrl}/person/block`,
@@ -1541,22 +1569,77 @@ function useFirebaseAuth() {
     [socket],
   );
 
-  const deleteMsg = async (chatId, contactId) => {
+  const deleteMsg = async (msg) => {
+    console.log(msg)
+    const resolvedId = msg._realId || msg._id;
+    const contactId = msg.forContact;
+
+    // 1. Optimistically remove from currentChatData
+    setCurrentChatData((prev) => prev.filter((m) => m._id !== msg._id));
+
+    // 2. Optimistically remove from recentChats
+    dispatchRecentChats({
+      type: "DELETE_MESSAGE",
+      chatId: contactId,
+      msgId: msg._id,
+    })
     try {
       const token = await auth.currentUser?.getIdToken();
       const res = await axios.post(
         `${serverUrl}/chat/delete`,
-        { chatId, contactId },
+        { chatId: resolvedId, contactId },
         { headers: { Authorization: `Bearer ${token}` } },
       );
+      if (!res || (res.status !== 200 && res.status !== 204)) {
+        console.log(res)
+        // Restore in currentChatData
+        setCurrentChatData((prev) => {
+          const exists = prev.some((m) => m._id === msg._id);
+          if (exists) return prev;
+          return [...prev, msg].sort((a, b) => new Date(a.time) - new Date(b.time));
+        });
+        // Restore in recentChats
+        dispatchRecentChats({
+          type: "ADD_UPDATE_MESSAGE",
+          chatId: contactId,
+          msg,
+        });
+        toast.error("Failed to delete message");
+      }
       return res;
     } catch (error) {
       console.log(error);
+      // Restore in currentChatData
+      setCurrentChatData((prev) => {
+        const exists = prev.some((m) => m._id === msg._id);
+        if (exists) return prev;
+        return [...prev, msg].sort((a, b) => new Date(a.time) - new Date(b.time));
+      });
+      // Restore in recentChats
+      dispatchRecentChats({
+        type: "ADD_UPDATE_MESSAGE",
+        chatId: contactId,
+        msg,
+      });
+      toast.error("Failed to delete message");
       return error;
     }
   };
 
-  const deleteMultipleMessages = async (chatIds, contactId) => {
+  const deleteMultipleMessages = async (messages, contactId) => {
+    const chatIds = messages.map((m) => m._realId || m._id);
+    const messageIds = messages.map((m) => m._id);
+
+    // 1. Optimistically remove from currentChatData
+    setCurrentChatData((prev) => prev.filter((m) => !messageIds.includes(m._id)));
+
+    // 2. Optimistically remove from recentChats
+    dispatchRecentChats({
+      type: "DELETE_MULTIPLE_MESSAGES",
+      chatId: contactId,
+      msgIds: messageIds,
+    });
+
     try {
       const token = await auth.currentUser?.getIdToken();
       const res = await axios.post(
@@ -1564,9 +1647,45 @@ function useFirebaseAuth() {
         { chatIds, contactId },
         { headers: { Authorization: `Bearer ${token}` } },
       );
+      if (!res || (res.status !== 200 && res.status !== 204)) {
+        // Restore in currentChatData
+        setCurrentChatData((prev) => {
+          const next = [...prev];
+          messages.forEach((msg) => {
+            if (!next.some((m) => m._id === msg._id)) next.push(msg);
+          });
+          return next.sort((a, b) => new Date(a.time) - new Date(b.time));
+        });
+        // Restore in recentChats
+        messages.forEach((msg) => {
+          dispatchRecentChats({
+            type: "ADD_UPDATE_MESSAGE",
+            chatId: contactId,
+            msg,
+          });
+        });
+        toast.error("Failed to delete messages");
+      }
       return res;
     } catch (error) {
       console.log(error);
+      // Restore in currentChatData
+      setCurrentChatData((prev) => {
+        const next = [...prev];
+        messages.forEach((msg) => {
+          if (!next.some((m) => m._id === msg._id)) next.push(msg);
+        });
+        return next.sort((a, b) => new Date(a.time) - new Date(b.time));
+      });
+      // Restore in recentChats
+      messages.forEach((msg) => {
+        dispatchRecentChats({
+          type: "ADD_UPDATE_MESSAGE",
+          chatId: contactId,
+          msg,
+        });
+      });
+      toast.error("Failed to delete messages");
       return error;
     }
   };
@@ -1892,7 +2011,7 @@ function useFirebaseAuth() {
         },
       );
       if (res.status === 200) {
-        
+
         return res;
       }
       return res;
@@ -1914,7 +2033,7 @@ function useFirebaseAuth() {
         },
       );
       if (res.status === 200) {
-        
+
         return res;
       }
       return res;

@@ -1,7 +1,7 @@
 import React, { useEffect, useContext, useState } from "react";
 import { useNavigate } from "react-router";
 import { AuthContext } from "./firebase hooks/AuthContext";
-import { TbCheck, TbChecks, TbAlertCircle, TbRefresh } from "react-icons/tb";
+import { TbCheck, TbChecks, TbAlertCircle, TbRefresh, TbClockHour4 } from "react-icons/tb";
 import toast from "react-hot-toast";
 import UserAvatar from "./UserAvatar"
 import ImageMessage from "./ImageMessage";
@@ -92,7 +92,13 @@ const MessegeBubble = ({
         >
             {convertDate(time)}
             {isSent && !msg._isError &&
-                (hasOtherIds ? <TbChecks size={16} /> : <TbCheck size={16} />)}
+                (isPending ? (
+                    <TbClockHour4 size={14} className="animate-pulse" />
+                ) : hasOtherIds ? (
+                    <TbChecks size={16} />
+                ) : (
+                    <TbCheck size={16} />
+                ))}
         </span>
     );
     // errorBlock removed and replaced with inline warning next to the bubble

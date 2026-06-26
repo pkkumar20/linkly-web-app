@@ -25,8 +25,6 @@ import { BsReply } from "react-icons/bs";
 import { IoCopyOutline, IoDownloadOutline, IoLinkOutline } from "react-icons/io5";
 import { MdOutlineDeleteOutline, MdKeyboardArrowDown, MdClose } from "react-icons/md";
 import { PiShareFat } from "react-icons/pi";
-import { RiPushpinLine } from "react-icons/ri";
-import { TbRefresh } from "react-icons/tb";
 import MessegeLabel from './MessegeLabel';
 import UserAvatar from "./UserAvatar";
 const MENU_WIDTH = 220;
@@ -53,8 +51,9 @@ const getFirstMedia = (msg) => {
     return null;
 };
 export default function ChatArea({ isChatSelected, back, contactData, choose, autoChatSendData, resetAutoSentChat, forwardMessagesData, setForwardMessagesData, isNavbarHidden, isMobile }) {
-    const { sendImagesInChanel, sendVideosInChanel, sendDocumentsInChanel, sendImagesInChat, sendVideosInChat, sendDocumentsInChat, sendReply, sendTextMessage, sendLocationMessage, sendContactMessage, getGroupMessages, sendMessageInGroup, sendMessageInChannel, currentChatData, backendUser, sendMessage, newMessege, setCCd, deleteMsg, contacts, rstUnread, handleChat, loadOlderMessages, forwardMessages, forwardOneMedia, forwardSelectedMedia, deleteMultipleMessages, toggleReaction, unBlockPerson } = useContext(AuthContext);
+    const { sendImagesInChanel, sendVideosInChanel, sendDocumentsInChanel, sendImagesInChat, sendVideosInChat, sendDocumentsInChat, sendReply, sendTextMessage, sendLocationMessage, sendContactMessage, currentChatData, backendUser, newMessege, setCCd, deleteMsg, contacts, rstUnread, loadOlderMessages, forwardMessages, forwardOneMedia, forwardSelectedMedia, deleteMultipleMessages, toggleReaction, unBlockPerson } = useContext(AuthContext);
     const [message, setMessage] = useState("");
+    const [messageToDelete, setMessageToDelete] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [highlightDate, setHighlightDate] = useState("");
     const [panelOpen, setPanelOpen] = useState(() => {
@@ -1295,7 +1294,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         }
         closeContextMenu();
     };
-    const onDelete = async () => {
+    const onDelete = () => {
         closeContextMenu();
         const msg = contextMenuMessage;
         if (msg._isError) {
@@ -1307,8 +1306,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
             toast.error("Cannot delete a message that hasn't finished sending.");
             return;
         }
-        const resolvedId = msg._realId || msg._id;
-        await deleteMsg(resolvedId, msg.forContact);
+        setMessageToDelete(msg);
     };
 
     const handleScroll = () => {
@@ -1734,6 +1732,32 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
         >
+            <style>{`
+                @keyframes telegramDelete {
+                    0% {
+                        opacity: 1;
+                        transform: scale(1);
+                        max-height: 500px;
+                        padding-top: 2px;
+                        padding-bottom: 2px;
+                        margin-bottom: 6px;
+                    }
+                    100% {
+                        opacity: 0;
+                        transform: scale(0.85);
+                        max-height: 0px;
+                        padding-top: 0px;
+                        padding-bottom: 0px;
+                        margin-bottom: 0px;
+                        overflow: hidden;
+                    }
+                }
+                .message-deleting {
+                    animation: telegramDelete 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+                    pointer-events: none;
+                    overflow: hidden;
+                }
+            `}</style>
             {/* Drop Zone Overlay */}
             {isDragging && (
                 <div className="absolute inset-0 z-[1000] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1975,7 +1999,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                                                     );
                                                 }
                                             }}
-                                            className={`relative select-none flex items-center w-full px-2 py-0.5 transition-colors cursor-pointer ${selectedMessages.includes(chatMsg._id) ? 'bg-green-100/40 rounded-2xl' : ''} ${getLocalDateString(chatMsg.time) === highlightDate ? 'search-highlight-flash' : ''}`}
+                                            className={`relative select-none flex items-center w-full px-2 py-0.5 transition-colors cursor-pointer ${selectedMessages.includes(chatMsg._id) ? 'bg-green-100/40 rounded-2xl' : ''} ${getLocalDateString(chatMsg.time) === highlightDate ? 'search-highlight-flash' : ''} ${chatMsg._isDeleting ? 'message-deleting' : ''}`}
                                         >
                                             {/* Selection Checkbox */}
                                             {selectedMessages.length > 0 && (
@@ -2570,19 +2594,44 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 count={selectedMessages.length}
                 profilePicture={chat?.contactType === "person" ? chat?.otherMember?.[0]?._id?.profile : chat?.details?.profile}
                 onDelete={async () => {
-                    const messagesToDelete = currentChatData
-                        .filter(m => selectedMessages.includes(m._id))
-                        .map(m => m._realId || m._id);
-
-                    if (messagesToDelete.length > 0) {
-                        try {
-                            await deleteMultipleMessages(messagesToDelete, chat._id);
-                        } catch (err) {
-                            console.error("Error deleting multiple messages:", err);
-                        }
-                    }
+                    const selectedIds = [...selectedMessages];
+                    const messagesToDeleteObjs = currentChatData.filter(m => selectedIds.includes(m._id));
+                    
                     setShowDeleteMultiplePopup(false);
                     setSelectedMessages([]);
+
+                    if (messagesToDeleteObjs.length > 0) {
+                        // 1. Trigger collapse animation
+                        setCCd(prev => prev.map(m => selectedIds.includes(m._id) ? { ...m, _isDeleting: true } : m));
+
+                        // 2. Wait for animation to finish, then delete
+                        setTimeout(async () => {
+                            try {
+                                await deleteMultipleMessages(messagesToDeleteObjs, chat._id);
+                            } catch (err) {
+                                console.error("Error deleting multiple messages:", err);
+                            }
+                        }, 350);
+                    }
+                }}
+            />
+
+            <DeleteMultiplePopup
+                isOpen={!!messageToDelete}
+                onClose={() => setMessageToDelete(null)}
+                count={1}
+                profilePicture={chat?.contactType === "person" ? chat?.otherMember?.[0]?._id?.profile : chat?.details?.profile}
+                onDelete={async () => {
+                    const msg = messageToDelete;
+                    setMessageToDelete(null);
+                    
+                    // 1. Trigger collapse animation
+                    setCCd(prev => prev.map(m => m._id === msg._id ? { ...m, _isDeleting: true } : m));
+
+                    // 2. Wait for animation to finish, then delete
+                    setTimeout(async () => {
+                        await deleteMsg(msg);
+                    }, 350);
                 }}
             />
 
