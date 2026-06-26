@@ -298,7 +298,10 @@ function AuthenticatedUser() {
     const handleHashChange = () => {
       const hashData = window.location.hash;
       if (hashData && hashData.startsWith('#')) {
-        const contactId = hashData.substring(1);
+        let contactId = hashData.substring(1);
+        if (contactId.includes('?')) {
+          contactId = contactId.split('?')[0];
+        }
         handleChat(contactId);
         setSelectedContactId(contactId);
         setDirection("forward");

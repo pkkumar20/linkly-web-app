@@ -57,7 +57,11 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     const [message, setMessage] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [highlightDate, setHighlightDate] = useState("");
-    const [panelOpen, setPanelOpen] = useState(false);
+    const [panelOpen, setPanelOpen] = useState(() => {
+        const hash = window.location.hash;
+        const search = window.location.search;
+        return hash.includes('info=true') || search.includes('info=true');
+    });
     const [showCalendar, setShowCalendar] = useState(false);
     const [calendarViewDate, setCalendarViewDate] = useState(new Date());
     const [tempSelectedDate, setTempSelectedDate] = useState(new Date());
@@ -73,15 +77,19 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
             setIsAnimating(false);
         }
     }, [contactData?._id, isMobile]);
+    const isFirstRender = useRef(true);
     useEffect(() => {
         setSearchQuery("");
         setHighlightDate("");
-        setPanelOpen(false);
+        if (!isFirstRender.current) {
+            setPanelOpen(false);
+        }
+        isFirstRender.current = false;
         setShowCalendar(false);
         setSelectedUserFilter(null);
     }, [contactData?._id]);
 
-    const isInfoPushedRef = useRef(false);
+    const isInfoPushedRef = useRef(window.location.hash.includes('info=true') || window.location.search.includes('info=true'));
 
     // Sync panelOpen state with history to support browser back button
     useEffect(() => {
@@ -89,13 +97,17 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
             if (!isInfoPushedRef.current) {
                 isInfoPushedRef.current = true;
                 const currentDepth = window.history.state?.modalDepth || 0;
-                window.history.pushState({ ...window.history.state, infoOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + window.location.hash + "?info=true");
+                const cleanHash = window.location.hash.split('?')[0];
+                window.history.pushState({ ...window.history.state, infoOpen: true, modalDepth: currentDepth + 1 }, '', window.location.pathname + cleanHash + "?info=true");
             }
         } else {
             if (isInfoPushedRef.current) {
                 isInfoPushedRef.current = false;
                 if (window.history.state?.infoOpen) {
                     window.history.back();
+                } else {
+                    const cleanHash = window.location.hash.split('?')[0];
+                    window.history.replaceState({ ...window.history.state, infoOpen: false }, '', window.location.pathname + cleanHash);
                 }
             }
         }
