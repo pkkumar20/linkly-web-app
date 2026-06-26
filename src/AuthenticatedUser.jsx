@@ -175,6 +175,8 @@ function AuthenticatedUser() {
   const [membersData, setMembersData] = useState([]);
   const [newGroupFinalData, setNewGroupFinalData] = useState([]);
   const [selectedContactId, setSelectedContactId] = useState(null);
+  const selectedContactIdRef = useRef(null);
+  selectedContactIdRef.current = selectedContactId;
   const [rdDataForChanel, setRdDataForChanel] = useState(null);
   const [isJoinPopUpOpen, setIsJoinPopUpOpen] = useState(false);
   const [joinPopUpData, setJoinPopUpData] = useState(null);
@@ -302,6 +304,12 @@ function AuthenticatedUser() {
         if (contactId.includes('?')) {
           contactId = contactId.split('?')[0];
         }
+        
+        // If we are already viewing this chat, do not reload/reset the chat messages
+        if (selectedContactIdRef.current === contactId) {
+          return;
+        }
+
         handleChat(contactId);
         setSelectedContactId(contactId);
         setDirection("forward");
