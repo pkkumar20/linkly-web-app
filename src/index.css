@@ -2,7 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  user-select: none;
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE10+ */
+}
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Ensure users can still select/type in input fields and textareas */
+input, textarea {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
+
+/* Optional helper class if we want specific elements to be selectable */
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
