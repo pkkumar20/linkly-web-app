@@ -80,6 +80,7 @@ function AllGroups({ Choose, inputRef }) {
             const res = await joinGroupAgain(fd);
             if (res && res.status === 200) {
                 toast.success("Joined group again successfully!");
+                setLeftOwnedGroups(prev => prev.filter(g => g._id !== groupId));
             } else {
                 toast.error("Failed to join group");
             }

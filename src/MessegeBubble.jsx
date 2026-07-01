@@ -45,19 +45,27 @@ const MessegeBubble = ({
 
 
     const [loadingContact, setLoadingContact] = useState(false);
+    const currentUserIdStr = (currentUser?._id || currentUser)?.toString();
+    const msgContactId = (msg?.forContact?._id || msg?.forContact)?.toString();
+    const chatContactId = (chat?._id?._id || chat?._id)?.toString();
+
+    const isPending = msg._isPending;
     useEffect(() => {
-        if (chat != null && msg.forContact.toString() === chat._id.toString()) {
-            if (!isSent && (!isSeenByMe || !isSeenByMe.includes(currentUser))) {
+        if (chat != null && msgContactId === chatContactId) {
+            const seenByList = isSeenByMe || [];
+            const alreadySeen = seenByList.some(id => (id?._id || id)?.toString() === currentUserIdStr);
+            const isRealId = chatId && !String(chatId).includes("-") && String(chatId).length === 24;
+            if (!isSent && !isPending && !alreadySeen && isRealId) {
+
                 addIdToSeenBy(chatId, currentUser);
             }
         }
-    }, [isSent, isSeenByMe, currentUser, chatId, addIdToSeenBy, chat, msg]);
+    }, [isSent, isPending, isSeenByMe, currentUser, chatId, addIdToSeenBy, chat, msg, msgContactId, chatContactId, currentUserIdStr]);
 
     if (chat == null) {
         return null;
-    } if (
-        msg.forContact.toString() !== chat._id.toString()
-    ) {
+    }
+    if (msgContactId !== chatContactId) {
         return null;
     }
     const convertDate = (d) => {
@@ -67,9 +75,8 @@ const MessegeBubble = ({
         return `${hours}:${minutes}`;
     };
 
-    const hasOtherIds = isSeenByMe && isSeenByMe.some(id => id !== currentUser);
+    const hasOtherIds = isSeenByMe && isSeenByMe.some(id => (id?._id || id)?.toString() !== currentUserIdStr);
 
-    const isPending = msg._isPending;
     const hasImages = msg.images && msg.images.length > 0;
     const hasVideos = msg.videos && msg.videos.length > 0;
     const hasDocuments = (msg.documents && msg.documents.length > 0) || (msg.document && msg.document.length > 0);
@@ -269,6 +276,7 @@ const MessegeBubble = ({
 
     return (
         <div
+
             className={`flex w-full mb-1.5 ${isSent ? "justify-end pr-3" : "justify-start pl-3"}`}
             key={chatId}
         >
@@ -508,6 +516,7 @@ const MessegeBubble = ({
                 {hasContact && (() => {
                     // const contactProfile = msg.contactDetails?.Id;
 
+
                     const contactInitial = (msg.contactDetails?.name || '?').charAt(0).toUpperCase();
 
                     return (
@@ -515,7 +524,7 @@ const MessegeBubble = ({
                             <div className="flex items-center gap-3">
                                 <UserAvatar
                                     size="h-11 w-11"
-                                    {...(msg.contactDetails?.Id !== undefined && msg.contactDetails?.Id?.type === 'image' && { image: msg.contactDetails?.Id.imageUrl })}
+                                    {...(msg.contactDetails?.Id !== undefined && msg.contactDetails?.Id?.profile?.type === 'image' && { image: msg.contactDetails?.Id.profile.imageUrl })}
                                     {...(msg.contactDetails?.Id !== undefined && msg.contactDetails?.Id.profile?.type === 'emoji' && {
                                         emoji: msg.contactDetails?.Id.profile.emoji,
                                         simpleBg: msg.contactDetails?.Id.profile.bgColor,
@@ -682,9 +691,12 @@ export default React.memo(MessegeBubble, (prev, next) => {
         prev.msg._isError === next.msg._isError &&
         prev.msg.content === next.msg.content &&
         prev.msg.caption === next.msg.caption &&
+        prev.msg.images?.length === next.msg.images?.length &&
+        prev.msg.videos?.length === next.msg.videos?.length &&
+        prev.msg.documents?.length === next.msg.documents?.length &&
         prev.msg.reactions?.length === next.msg.reactions?.length &&
         prev.isSent === next.isSent &&
         prev.searchQuery === next.searchQuery &&
-        prev.msg.seenBy?.length === next.msg.seenBy?.length &&
+        JSON.stringify(prev.msg.seenBy) === JSON.stringify(next.msg.seenBy) &&
         prev.msg.isDeleted === next.msg.isDeleted;
 });

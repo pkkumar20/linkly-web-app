@@ -56,8 +56,8 @@ export default function InfoMediaViewer({ items, initialIndex = 0, onClose, onFo
     const [isLoading, setIsLoading] = useState(true);
     const [phase, setPhase] = useState('mounting'); // mounting → open → closing
     const contact = contacts.find(contact => contact._id.toString() === items[currentIndex].msg.forContact.toString());
-    
-    
+
+
     const handleIsDeleteAllowed
         = () => {
             if (contact?.contactType !== "person") {
@@ -101,7 +101,7 @@ export default function InfoMediaViewer({ items, initialIndex = 0, onClose, onFo
     const currentItem = items[currentIndex];
     const isImage = currentItem?.type === 'image';
     const isVideo = currentItem?.type === 'video';
-    
+
 
     // ── Apply transform to the DOM directly (no React re-render) ─────────
     const applyTransform = useCallback(() => {
@@ -223,7 +223,7 @@ export default function InfoMediaViewer({ items, initialIndex = 0, onClose, onFo
     return createPortal(
         <div
             style={{
-                position: 'fixed', inset: 0, zIndex: 999,
+                position: 'fixed', inset: 0, zIndex: 1500,
                 background: 'rgba(0,0,0,0.92)',
                 display: 'flex', flexDirection: 'column',
                 userSelect: 'none',

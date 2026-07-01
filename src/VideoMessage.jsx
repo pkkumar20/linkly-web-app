@@ -296,19 +296,7 @@ const VideoMessage = memo(({ choose, msg, chat, videos, isPending, isSent, sende
     const prevVideosRef = useRef(null);
     const prevVideosKey = useRef(null);
     if (!lockedUrls.current || prevVideosKey.current !== videosKey) {
-        const oldUrlMap = new Map();
-        if (prevVideosRef.current && lockedUrls.current) {
-            prevVideosRef.current.forEach((oldVid, i) => {
-                const key = oldVid._id || oldVid.url;
-                if (key && lockedUrls.current[i]) oldUrlMap.set(key.toString(), lockedUrls.current[i]);
-            });
-        }
-        lockedUrls.current = videos.map((vid) => {
-            const key = vid._id || vid.url;
-            const oldUrl = key ? oldUrlMap.get(key.toString()) : null;
-            if (oldUrl?.startsWith('blob:') && vid.url && !vid.url.startsWith('blob:')) return oldUrl;
-            return vid.url;
-        });
+        lockedUrls.current = videos.map((vid) => vid.url);
         prevVideosRef.current = videos;
         prevVideosKey.current = videosKey;
     }
@@ -460,8 +448,9 @@ const VideoMessage = memo(({ choose, msg, chat, videos, isPending, isSent, sende
     if (prevProps.isPending !== nextProps.isPending) return false;
     if (prevProps.msg?._isError !== nextProps.msg?._isError) return false;
     if (prevProps.senderName !== nextProps.senderName) return false;
-    if (prevProps.videos.length !== nextProps.videos.length) return false;
-    return prevProps.videos.every((v, i) => v.url === nextProps.videos[i]?.url);
+    if (prevProps.msg !== nextProps.msg) return false;
+    if (prevProps.videos?.length !== nextProps.videos?.length) return false;
+    return prevProps.videos?.every((v, i) => v.url === nextProps.videos[i]?.url);
 });
 
 export default VideoMessage;

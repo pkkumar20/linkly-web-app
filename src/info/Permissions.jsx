@@ -34,7 +34,7 @@ function Permissions({ Screen, chat }) {
         } else {
             Screen("main");
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Empty deps: only run on mount, never on chat update
 
 
@@ -231,7 +231,7 @@ function Permissions({ Screen, chat }) {
                         {/* STOP PROPAGATION HERE: Prevents Switch click from triggering ListItem click */}
                         <ListItemSuffix onClick={(e) => e.stopPropagation()}>
                             <Switch
-                                className='bg-red-500 checked:bg-blue-500'
+                                className='bg-red-500 checked:bg-[#8763ea]'
                                 checked={toogleValues.sendMesseges}
                                 onChange={() => handleToggle('sendMesseges')}
                             />
@@ -242,7 +242,7 @@ function Permissions({ Screen, chat }) {
                         {/* STOP PROPAGATION HERE: Prevents Switch click from triggering ListItem click */}
                         <ListItemSuffix onClick={(e) => e.stopPropagation()}>
                             <Switch
-                                className='bg-red-500 checked:bg-blue-500'
+                                className='bg-red-500 checked:bg-[#8763ea]'
                                 checked={toogleValues.deleteMessages}
                                 onChange={() => handleToggle('deleteMessages')}
                             />
@@ -257,7 +257,7 @@ function Permissions({ Screen, chat }) {
                         {/* STOP PROPAGATION HERE: Prevents Switch click from triggering ListItem click */}
                         <ListItemSuffix onClick={(e) => e.stopPropagation()}>
                             <Switch
-                                className='bg-red-500 checked:bg-blue-500'
+                                className='bg-red-500 checked:bg-[#8763ea]'
                                 checked={toogleValues.sendMedia}
                                 onChange={() => handleToggle('sendMedia')}
                             />
@@ -278,10 +278,9 @@ function Permissions({ Screen, chat }) {
                                             onChange={() => handleToggleCheckBox("sendPhotos")}
                                             checked={toogleValues.sendPhotos}
                                             name='item'
-                                            id="horizontal-list-react"
+                                            id="horizontal-list-react-photos"
                                             ripple={false}
-                                            color='blue'
-                                            className="hover:before:opacity-0"
+                                            className="hover:before:opacity-0 checked:bg-[#8763ea] checked:border-[#8763ea]"
                                             containerProps={{
                                                 className: "p-1",
                                             }}
@@ -295,10 +294,9 @@ function Permissions({ Screen, chat }) {
                                             onChange={() => handleToggleCheckBox("sendVideos")}
                                             checked={toogleValues.sendVideos}
                                             name='item'
-                                            id="horizontal-list-react"
+                                            id="horizontal-list-react-videos"
                                             ripple={false}
-                                            color='blue'
-                                            className="hover:before:opacity-0"
+                                            className="hover:before:opacity-0 checked:bg-[#8763ea] checked:border-[#8763ea]"
                                             containerProps={{
                                                 className: "p-1",
                                             }}
@@ -312,10 +310,9 @@ function Permissions({ Screen, chat }) {
                                             onChange={() => handleToggleCheckBox("sendFiles")}
                                             checked={toogleValues.sendFiles}
                                             name='item'
-                                            id="horizontal-list-react"
+                                            id="horizontal-list-react-files"
                                             ripple={false}
-                                            color='blue'
-                                            className="hover:before:opacity-0"
+                                            className="hover:before:opacity-0 checked:bg-[#8763ea] checked:border-[#8763ea]"
                                             containerProps={{
                                                 className: "p-1",
                                             }}
@@ -334,7 +331,7 @@ function Permissions({ Screen, chat }) {
                         {/* STOP PROPAGATION HERE: Prevents Switch click from triggering ListItem click */}
                         <ListItemSuffix onClick={(e) => e.stopPropagation()}>
                             <Switch
-                                className='bg-red-500 checked:bg-blue-500'
+                                className='bg-red-500 checked:bg-[#8763ea]'
                                 checked={toogleValues.sendLocation}
                                 onChange={() => handleToggle('sendLocation')}
                             />
@@ -345,7 +342,7 @@ function Permissions({ Screen, chat }) {
                         {/* STOP PROPAGATION HERE: Prevents Switch click from triggering ListItem click */}
                         <ListItemSuffix onClick={(e) => e.stopPropagation()}>
                             <Switch
-                                className='bg-red-500 checked:bg-blue-500'
+                                className='bg-red-500 checked:bg-[#8763ea]'
                                 checked={toogleValues.changeChatInfo}
                                 onChange={() => handleToggle('changeChatInfo')}
                             />
@@ -356,7 +353,7 @@ function Permissions({ Screen, chat }) {
                         {/* STOP PROPAGATION HERE: Prevents Switch click from triggering ListItem click */}
                         <ListItemSuffix onClick={(e) => e.stopPropagation()}>
                             <Switch
-                                className='bg-red-500 checked:bg-blue-500'
+                                className='bg-red-500 checked:bg-[#8763ea]'
                                 checked={toogleValues.addUsers}
                                 onChange={() => handleToggle('addUsers')}
                             />

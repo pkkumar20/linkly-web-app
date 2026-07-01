@@ -1,9 +1,22 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Avatar from "../UserAvatar";
+import { Spinner } from "@material-tailwind/react";
 
 export default function DeleteChatPopup({ onClose, onDelete, chat }) {
     const [alsoDeleteForOther, setAlsoDeleteForOther] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const handleDelete = async () => {
+        setLoading(true);
+        try {
+            await onDelete(alsoDeleteForOther);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 select-none">
@@ -12,7 +25,7 @@ export default function DeleteChatPopup({ onClose, onDelete, chat }) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                onClick={onClose}
+                onClick={loading ? undefined : onClose}
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
             />
             <motion.div
@@ -44,13 +57,14 @@ export default function DeleteChatPopup({ onClose, onDelete, chat }) {
                     Are you sure you want to delete the chat with <span className="font-bold text-gray-900">{chat?.otherMember?.[0]?._id?.name || chat?.otherMember?.[0]?._id?.username || "this user"}</span>?
                 </div>
 
-                <label className="flex items-center gap-3 cursor-pointer select-none group py-1">
+                <label className={`flex items-center gap-3 cursor-pointer select-none group py-1 ${loading ? "pointer-events-none opacity-50" : ""}`}>
                     <div className="relative flex items-center justify-center flex-shrink-0">
                         <input
                             type="checkbox"
                             checked={alsoDeleteForOther}
                             onChange={(e) => setAlsoDeleteForOther(e.target.checked)}
                             className="sr-only"
+                            disabled={loading}
                         />
                         <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-150 ease-out active:scale-90 ${alsoDeleteForOther
                             ? 'bg-[#8763ea] border-[#8763ea] shadow-sm shadow-[#8763ea]/20'
@@ -77,15 +91,18 @@ export default function DeleteChatPopup({ onClose, onDelete, chat }) {
                 <div className="flex items-center justify-end gap-3 mt-2">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-[14px] font-semibold text-[#8763ea] hover:bg-blue-50/50 rounded-lg transition-colors uppercase tracking-wider cursor-pointer"
+                        disabled={loading}
+                        className="px-4 py-2 text-[14px] font-semibold text-[#8763ea] hover:bg-blue-50/50 rounded-lg transition-colors uppercase tracking-wider cursor-pointer disabled:opacity-50"
                     >
                         Cancel
                     </button>
                     <button
-                        onClick={() => onDelete(alsoDeleteForOther)}
-                        className="px-4 py-2 text-[14px] font-semibold text-red-500 hover:bg-red-50 rounded-lg transition-colors uppercase tracking-wider cursor-pointer"
+                        onClick={handleDelete}
+                        disabled={loading}
+                        className="px-4 py-2 text-[14px] font-semibold text-red-500 hover:bg-red-50 rounded-lg transition-colors uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 min-h-[36px]"
                     >
-                        Delete Chat
+                        {loading ? <Spinner
+                            color="red" className="h-4 w-4" /> : "Delete Chat"}
                     </button>
                 </div>
             </motion.div>

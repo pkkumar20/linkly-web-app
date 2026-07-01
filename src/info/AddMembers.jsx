@@ -4,7 +4,8 @@ import {
     List,
     ListItem,
     Checkbox,
-    Typography
+    Typography,
+    Spinner
 } from "@material-tailwind/react";
 import { RiUserAddLine } from "react-icons/ri";
 import Lottie from 'lottie-react';
@@ -462,15 +463,18 @@ export default function AddMembers({ back, member, chat }) {
                     <motion.button
                         disabled={loading}
                         onClick={() => handleFab()}
-                        className="fixed bottom-7 right-7 w-14 h-14 bg-blue-600 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700"
+                        className="fixed bottom-7 right-7 w-14 h-14 bg-[#8763ea] rounded-full shadow-lg flex items-center justify-center hover:bg-[#6f43db]"
                         aria-label="Save"
                         variants={fabVariants}
                         initial="hidden"
                         animate="visible"
                         exit="hidden"
                         style={{ willChange: "transform, opacity", zIndex: 50 }}
+
                     >
-                        <RiUserAddLine size={28} className='text-white' />
+                        {loading && <Spinner className="text-white" />}
+                        {!loading && <RiUserAddLine size={28} className='text-white' />}
+
                     </motion.button>
                 )}
             </AnimatePresence>
@@ -516,6 +520,7 @@ export default function AddMembers({ back, member, chat }) {
                                 membersNames={selectedNames}
                                 members={selected}
                                 back={() => back()}
+                                isLoading={(x) => setLoading(x)}
                             />
                         </div>
                     </motion.div>
@@ -526,10 +531,14 @@ export default function AddMembers({ back, member, chat }) {
 }
 import UserAvatar2 from "../UserAvatar2";
 import toast from "react-hot-toast";
-function Popup({ isOpen, onClose, chat, members, membersNames, back }) {
+function Popup({ isOpen, onClose, chat, members, membersNames, back, isLoading }) {
     if (!isOpen) return null;
     const { addManyUserInGroupById, addMemberInChanel } = useContext(AuthContext);
+    const [loading, setLoading] = useState(false);
+
     const handleAdd = async () => {
+        isLoading(true);
+        onClose();
         const getUnjoinedUsers = () => {
             // Extract member IDs from current group (subdocument array)
             const currentMemberIds = chat.members
@@ -562,9 +571,10 @@ function Popup({ isOpen, onClose, chat, members, membersNames, back }) {
             if (chat.contactType === "channel") {
                 const res = await addMemberInChanel(fd);
                 if (res.status == 409) {
+                    setLoading(false);
                     toast.error("Already joined the channel")
                 } else {
-
+                    setLoading(false);
                     onClose();
                     back();
                     toast.success("Added sucessfully")
@@ -573,7 +583,7 @@ function Popup({ isOpen, onClose, chat, members, membersNames, back }) {
 
             } else if (chat.contactType === "group") {
                 const res = await addManyUserInGroupById(fd);
-
+                setLoading(false);
 
                 onClose();
                 back();
@@ -581,6 +591,7 @@ function Popup({ isOpen, onClose, chat, members, membersNames, back }) {
             }
 
         } else {
+            setLoading(false);
             toast.error(` Already joined the ${chat.contactType}`)
             onClose()
         }
@@ -616,46 +627,24 @@ function Popup({ isOpen, onClose, chat, members, membersNames, back }) {
                     </p>
                 </div>
 
-                {/* Close Icon */}
-                {/* <button
-                    onClick={onClose}
-                    className="absolute left-4 top-4 text-gray-400 hover:text-gray-600 text-2xl"
-                    aria-label="Close popup"
-                >
-                    &times;
-                </button> */}
-                {/* Header */}
-                {/* <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold ml-8">Add Contact</h2>
-                    <button className="bg-blue-100 text-blue-500 font-semibold px-5 py-2 rounded-xl text-sm opacity-60 cursor-not-allowed">
-                        ADD
-                    </button>
-                </div> */}
-
-                {/* Phone Number */}
-                {/* <div className="mt-1">
-                    <label className="text-xs text-gray-400 px-1">Phone Number</label>
-                    <input
-                        type="text"
-                        className="border border-gray-200 rounded-xl px-4 py-3 w-full text-gray-700 mt-1 placeholder:text-gray-400 outline-none"
-                        placeholder="+91 ------- -----"
-                    />
-                </div> */}
                 {/* Buttons */}
-                <div className="flex items-end justify-end space-x-3 pt-4">
-                    <button
-                        className="  py-2 px-3 font-semibold  text-blue-400 rounded-lg text-md hover:bg-blue-50 transition-colors"
-                        onClick={onClose}
-                    >
-                        CANCEL
-                    </button>
-                    <button
-                        className=" py-2 px-3 font-semibold  text-blue-400 rounded-lg text-md hover:bg-blue-50 transition-colors"
-                        onClick={() => handleAdd()}
-                    >
-                        ADD
-                    </button>
-                </div>
+                {!loading &&
+                    <div className="flex items-end justify-end space-x-3 pt-4">
+                        {/* {loading && <Spinner className="h-6 w-6 animate-spin "/>} */}
+                        <button
+                            disabled={loading}
+                            className="  py-2 px-3 font-semibold  text-blue-400 rounded-lg text-md hover:bg-blue-50 transition-colors"
+                            onClick={onClose}
+                        >
+                            CANCEL
+                        </button>
+                        <button
+                            className=" py-2 px-3 font-semibold  text-blue-400 rounded-lg text-md hover:bg-blue-50 transition-colors"
+                            onClick={() => handleAdd()}
+                        >
+                            ADD
+                        </button>
+                    </div>}
             </div>
 
         </div>

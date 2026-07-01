@@ -1,6 +1,4 @@
 import { StrictMode } from 'react'
-import "flyonui/variants.css";
-import 'flyonui/flyonui.js';
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'

@@ -41,6 +41,12 @@ const LocationMessage = React.memo(({ msg, isSent, formattedTime, hasOtherIds, t
                     });
 
                     if (newMap && typeof newMap.on === 'function') {
+                        newMap.on("styleimagemissing", (e) => {
+                            if (newMap && typeof newMap.hasImage === 'function' && !newMap.hasImage(e.id)) {
+                                newMap.addImage(e.id, { width: 1, height: 1, data: new Uint8Array(4) });
+                            }
+                        });
+
                         newMap.on("load", () => {
                             if (!isMounted) return;
                             mapplsClassObject.Marker({

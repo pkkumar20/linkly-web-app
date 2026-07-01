@@ -22,9 +22,6 @@
     "emoji-mart": "^5.6.0",
     "emoji-picker-react": "^4.13.3",
     "firebase": "^12.3.0",
-    "flowbite": "^2.5.2",
-    "flowbite-react": "^0.12.9",
-    "flyonui": "^2.4.1",
     "framer-motion": "^12.23.14",
     "heroicons": "^2.2.0",
     "html2canvas": "^1.4.1",
@@ -51,7 +48,7 @@
     "socket.io-client": "^4.8.1",
     "styled-components": "^6.1.18",
     "tailwind-scrollbar": "^3.1.0",
-    "uuid": "^11.1.0",
+    "uuid": "^11.1.1",
     "uuid4": "^2.0.3"
   },
   "devDependencies": {

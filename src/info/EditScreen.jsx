@@ -49,9 +49,39 @@ import RemovedUSersScreen from './RemovedUsers';
 import Permissions from './Permissions';
 import LeaveGroupPopUp from './LeaveGroupPopUp';
 export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSendInviteLink }) {
+
+
     const { backendUser, updateGroupInfo, profileUpdateinChanel } = useContext(AuthContext);
+    useEffect(() => {
+        const isAdmin = chatData.admins?.some(admin => {
+            const adminId = admin._id ? admin._id.toString() : admin.toString();
+            return adminId === backendUser._id.toString();
+        });
+        if (!isAdmin) {
+            onPress(false);
+        }
+    }, [chatData.admins, backendUser._id, onPress]);
+
     const [popupOpen, setPopupOpen] = useState(false);
     const [screen, setScreen] = useState('main');
+    const [selectedAdmin, setSelectedAdmin] = useState(null);
+
+    const handleScreenChange = (targetScreen, adminData) => {
+        if (adminData) {
+            setSelectedAdmin(adminData);
+            setScreen('administration');
+        } else if (targetScreen === 'main') {
+            if (selectedAdmin) {
+                setSelectedAdmin(null);
+                setScreen('member');
+            } else {
+                setScreen('main');
+            }
+        } else {
+            setSelectedAdmin(null);
+            setScreen(targetScreen);
+        }
+    };
     const [showFab, setShowFab] = useState(false);
     const [groupName, setGroupName] = useState(chatData.name);
     const [file, setFile] = useState(null);
@@ -203,7 +233,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
     }, [groupName, file, emoji, chatData.name]);
     useState(() => {
         if (rdScreen.length > 0) {
-            
+
         }
     })
     useEffect(() => {
@@ -230,7 +260,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
         exit: { x: "100%" }          // Slide out right (closing)
     };
     const handleFabClick = async () => {
-        
+
 
         try {
             setLoading(true)
@@ -261,7 +291,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                 fd.append("groupId", chatData._id);
                 const res = await updateGroupInfo(fd);
                 if (res.status === 200) {
-                    
+
 
                     setLoading(false);
                     onPress(false)
@@ -271,7 +301,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                 fd.append("channelId", chatData._id);
                 const res = await profileUpdateinChanel(fd);
                 if (res.status === 200) {
-                    
+
 
                     setLoading(false);
                     onPress(false)
@@ -336,7 +366,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                                             profileType: 'undefined'
                                         })}
 
-                                        isChanged={e => {}}
+                                        isChanged={e => { }}
                                         isprofile={false}
                                         disabled={loading}
                                         onFileSelect={(file) => {
@@ -585,7 +615,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                                 >
                                     <div style={{ pointerEvents: 'auto' }}>
                                         <LeaveGroupPopUp
-                                            onShare={(chatId, userId) => {}}
+                                            onShare={(chatId, userId) => { }}
                                             chat={chatData}
                                             isOpen={popupOpen}
                                             onClose={() => setPopupOpen(false)}
@@ -598,7 +628,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                     </div>
                 </div>
 
-                {/* AnimatePresence only for admin panel */}
+                {/* AnimatePresence for sub-screens */}
                 <AnimatePresence>
                     {screen === "groupType" && (
                         <motion.div
@@ -635,22 +665,7 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                     )}
                 </AnimatePresence>
                 <AnimatePresence>
-                    {screen === 'administration' && (
-                        <motion.div
-                            key='administration'
-                            className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96 overflow-hidden"
-                            variants={adminVariants}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            transition={{ type: "spring", stiffness: 250, damping: 35 }}
-                        >
-                            <AdministrationScreen Screen={(e) => setScreen(e)} chat={chatData} />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                <AnimatePresence>
-                    {screen === 'member' && (
+                    {(screen === 'member' || (screen === 'administration' && selectedAdmin)) && (
                         <motion.div
                             key='member'
                             className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 w-full md:w-96 overflow-hidden"
@@ -660,8 +675,23 @@ export default function EditScreen({ onShare, onPress, chatData, rdScreen, onSen
                             exit="exit"
                             transition={{ type: "spring", stiffness: 250, damping: 35 }}
                         >
-                            <MemberScreen Screen={(e) => setScreen(e)} chat={chatData} choose={onSendInviteLink
+                            <MemberScreen Screen={(e, d) => handleScreenChange(e, d)} chat={chatData} choose={onSendInviteLink
                             } onShare={onShare} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+                <AnimatePresence>
+                    {screen === 'administration' && (
+                        <motion.div
+                            key='administration'
+                            className={`fixed right-0 top-0 h-full bg-white shadow-2xl ${selectedAdmin ? 'z-[60]' : 'z-50'} w-full md:w-96 overflow-hidden`}
+                            variants={adminVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            transition={{ type: "spring", stiffness: 250, damping: 35 }}
+                        >
+                            <AdministrationScreen Screen={(e, d) => handleScreenChange(e, d)} chat={chatData} initialSelectedAdmin={selectedAdmin} />
                         </motion.div>
                     )}
                 </AnimatePresence>

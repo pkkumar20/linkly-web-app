@@ -12,6 +12,7 @@ import {
     ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import AvatarForProfileSet from './AvatarSelectForProfileSet';
+import AvatarWithUpload from "./AvatarWithUpload";
 import { useState } from 'react';
 const COLOR_OPTIONS = [
     "#ff9a9e", "#1d8fe1", "#625eb1", "#7918f2", "#4801ff", "#44107a", "#ff1361", "#43e97b", "#38f9d7", "#7b54c9",
@@ -57,7 +58,7 @@ function NewGroupFinalPage({ Choose, members }) {
     useEffect(() => {
         if (members.length > 0) {
             const ids = members.map(member => member.otherMember[0]._id._id);
-            
+
             setMembersId(ids);
         }
     }, [members])
@@ -67,7 +68,7 @@ function NewGroupFinalPage({ Choose, members }) {
     };
     const handleFabClick = async () => {
         try {
-            
+
             selectedEmoji
             setDisabled(true)
             setLoading(true)
@@ -121,7 +122,7 @@ function NewGroupFinalPage({ Choose, members }) {
             }
         }
     };
-    
+
     return (
         <div
             id="scrollable-content"
@@ -139,11 +140,11 @@ function NewGroupFinalPage({ Choose, members }) {
 
             </div>
             <div className='bg-white pt-4' >
-                <AvatarForProfileSet disabled={disabled} isprofile={false} onFileSelect={(file) => {
+                <AvatarWithUpload disabled={disabled} isprofile={false} onFileSelect={(file) => {
                     handleFileChange(file)
                     setSelectedEmoji(null)
                 }} onEmojiSelect={(e) => {
-                    
+
 
                     setSelectedEmoji(e)
                     setSelectedFile(null);
@@ -152,7 +153,7 @@ function NewGroupFinalPage({ Choose, members }) {
                     <div className="my-6">
                         <div class="relative">
                             <input disabled={disabled} value={groupName} onChange={(e) => inputHandler(e.target.value)} name='groupName' type="text" id="floating_outlined" class="h-14 block px-2.5 pb-2.5 pt-4 w-full text-md text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-[#8763ea] focus:outline-none focus:ring-0 focus:border-[#8763ea] peer" placeholder=" " />
-                            <label for="floating_outlined" class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-[#8763ea] peer-focus:dark:text-[#8763ea] peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Group Name</label>
+                            <label htmlFor="floating_outlined" class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-[#8763ea] peer-focus:dark:text-[#8763ea] peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Group Name</label>
                         </div>
                     </div>
                 </div>

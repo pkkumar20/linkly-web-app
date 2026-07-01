@@ -135,15 +135,23 @@ const screens = {
 };
 
 function AuthenticatedUser() {
-  const { addContactById, addInGroupById, backendUser, handleChat, recentChats, selctedContact, contacts, joinChanelByInvite } = useContext(AuthContext);
+  const { addContactById, addInGroupById, backendUser, handleChat, recentChats, selctedContact, contacts, joinChanelByInvite, joinGroupInvite } = useContext(AuthContext);
   const location = useLocation();
+  const navigateToChat = (contactId) => {
+    const targetUrl = `/#${contactId}`;
+    if (window.location.hash) {
+      window.history.replaceState({}, '', targetUrl);
+    } else {
+      window.history.pushState({}, '', targetUrl);
+    }
+  };
   const findContact = (id) => {
     // ✅ Early return if no ID or no contacts
     if (!id || !contacts?.length) {
       setCurrent("Home")
       setSelectedChat(null);
       setActiveChat(false)
-      window.history.pushState({}, '', `/`);
+      window.history.replaceState({}, '', `/`);
       return null;
     }
 
@@ -155,7 +163,7 @@ function AuthenticatedUser() {
       setCurrent("Home")
       setSelectedChat(null);
       setActiveChat(false)
-      window.history.pushState({}, '', `/`);
+      window.history.replaceState({}, '', `/`);
       return null;
     }
 
@@ -204,17 +212,23 @@ function AuthenticatedUser() {
     const sidebarScreens = ["Setting", "Serch", "Profile", "EditProfile", "NewGroup", "NewGroupFinalPage", "NewChanel", "AddMemberForChanel", "Contact", "Notification"];
 
     const handlePopState = (e) => {
-      if (sidebarScreens.includes(currentRef.current)) {
-        // Navigate back to Home without changing URL
-        setPrev(currentRef.current);
-        setCurrent("Home");
-        setDirection("back");
-        setAnimating(true);
-        setTimeout(() => setAnimating(false), 260);
+      setTimeout(() => {
+        if (window._linklyModalPopped) {
+          window._linklyModalPopped = false;
+          return;
+        }
+        if (sidebarScreens.includes(currentRef.current)) {
+          // Navigate back to Home without changing URL
+          setPrev(currentRef.current);
+          setCurrent("Home");
+          setDirection("back");
+          setAnimating(true);
+          setTimeout(() => setAnimating(false), 260);
 
-        // Keep URL with hash preserved
-        window.history.pushState({}, '', window.location.pathname + window.location.hash);
-      }
+          // Keep URL with hash preserved
+          window.history.pushState({}, '', window.location.pathname + window.location.hash);
+        }
+      }, 0);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -232,6 +246,7 @@ function AuthenticatedUser() {
     const params = new URLSearchParams(window.location.search);
     const userID = params.get('userID');  // "abc123"
     const groupId = params.get('groupId');  // "abc123"
+    const channelId = params.get('channelId');  // "abc123"
     // "messages"
     const chatId = params.get('chatId');  // "abc123"
 
@@ -261,14 +276,14 @@ function AuthenticatedUser() {
             };
           }
           const contact = contactWithOtherMembers();
-          window.history.pushState({}, '', `/#${contact._id}`);
+          navigateToChat(contact._id);
           // UpdateSelecetdChat(contact);
           setSelectedChat(contact);
           setActiveChat(true);
 
 
         } else if (res.response.status == 409) {
-          window.history.pushState({}, '', `/`);
+          window.history.replaceState({}, '', `/`);
           toast.error("Cannot add yourself as contact")
         }
       }
@@ -283,13 +298,35 @@ function AuthenticatedUser() {
         );
 
         if (targetContact !== null && targetContact !== undefined) {
-          window.history.pushState({}, '', `/#${chatData._id}`);
+          navigateToChat(chatData._id);
           handleChat(chatData._id);
           setSelectedContactId(chatData._id);
           setActiveChat(true);
 
         } else {
           setJoinPopUpData(chatData);
+          setIsJoinPopUpOpen(true)
+        }
+
+      }
+
+
+    }
+    if (channelId) {
+      const channelData = location.state?.context;
+      if (channelData !== null) {
+        const targetContact = contacts.find(
+          (contact) => contact._id?.toString() === channelData._id.toString()
+        );
+
+        if (targetContact !== null && targetContact !== undefined) {
+          navigateToChat(channelData._id);
+          handleChat(channelData._id);
+          setSelectedContactId(channelData._id);
+          setActiveChat(true);
+
+        } else {
+          setJoinPopUpData(channelData);
           setIsJoinPopUpOpen(true)
         }
 
@@ -304,7 +341,7 @@ function AuthenticatedUser() {
         if (contactId.includes('?')) {
           contactId = contactId.split('?')[0];
         }
-        
+
         // If we are already viewing this chat, do not reload/reset the chat messages
         if (selectedContactIdRef.current === contactId) {
           return;
@@ -371,7 +408,7 @@ function AuthenticatedUser() {
     if (selectedContactId) {
       handleChat(selectedContactId);
     }
-  }, [selectedContactId, handleChat]);
+  }, [selectedContactId]);
 
 
   const isSmMd = useIsSmMd();
@@ -389,7 +426,7 @@ function AuthenticatedUser() {
       }
 
       setActiveChat(true);
-      window.history.pushState({}, '', `/#${ChatData._id}`);
+      navigateToChat(ChatData._id);
       return;  // ✅ don’t navigate away to Setting screen
     }
     if (next === "Chat" && ChatData) {
@@ -405,7 +442,7 @@ function AuthenticatedUser() {
         setForwardMessagesData(forwardData);
       }
       setActiveChat(true);
-      window.history.pushState({}, '', `/#${ChatData._id}`);
+      navigateToChat(ChatData._id);
       return;  // ✅ don’t navigate away to Setting screen
     }
     if (next === "NewGroupFinalPage" && extraData) {
@@ -435,7 +472,7 @@ function AuthenticatedUser() {
       setSelectedContactId(redirectData2._id)
       // UpdateSelecetdChat(ChatData);
       setSelectedChat(redirectData2);
-      window.history.pushState({}, '', `/#${redirectData2._id}`);
+      navigateToChat(redirectData2._id);
 
       setActiveChat(true);
 
@@ -456,7 +493,7 @@ function AuthenticatedUser() {
       setSelectedChat(redirectData)
       setActiveChat(true);
       setRdDataForChanel(redirectData)
-      window.history.pushState({}, '', `/#${redirectData._id}`);
+      navigateToChat(redirectData._id);
     }
     if (next === current || animating) return;
     const currentIndex = screenOrder.indexOf(current);
@@ -519,7 +556,7 @@ function AuthenticatedUser() {
           setPrev("Chat");
           setDirection("back");
           setAnimating(true);
-          window.history.pushState({}, '', `/`);
+          window.history.replaceState({}, '', `/`);
           setTimeout(() => setAnimating(false), 260);
         }}
       />;
@@ -538,9 +575,34 @@ function AuthenticatedUser() {
 
 
   const handleBackFromChat = () => {
-    console.log("back from chat");
-    setActiveChat(false);
-    window.history.pushState({}, '', `/`);
+    if (window.history.state?.selectionSession || window.history.state?.locationSession) {
+      const currentHash = window.location.hash;
+      window.history.go(-2);
+      setTimeout(() => {
+        if (window.location.hash === currentHash) {
+          window.history.replaceState({}, '', `/`);
+          setActiveChat(false);
+          setSelectedContactId(null);
+          setSelectedChat(null);
+        }
+      }, 50);
+    } else if (window.location.hash) {
+      const currentHash = window.location.hash;
+      window.history.back();
+      setTimeout(() => {
+        if (window.location.hash === currentHash) {
+          window.history.replaceState({}, '', `/`);
+          setActiveChat(false);
+          setSelectedContactId(null);
+          setSelectedChat(null);
+        }
+      }, 50);
+    } else {
+      window.history.replaceState({}, '', `/`);
+      setActiveChat(false);
+      setSelectedContactId(null);
+      setSelectedChat(null);
+    }
   };
   const variants = {
     initial: (dir) => ({
@@ -563,7 +625,7 @@ function AuthenticatedUser() {
   const handleBack = () => {
     setDirection("exit");      // Set exit animation to back direction (L→R)
     setAnimating(true);
-    window.history.pushState({}, '', `/`);
+    window.history.replaceState({}, '', `/`);
     setTimeout(() => {
       setActiveChat(false);    // Unmount ChatArea only after exit animation finishes
       setCurrent("Home");
@@ -595,20 +657,65 @@ function AuthenticatedUser() {
         setIsJoinPopUpOpen(false);
         setJoinPopUpData(null);
         const contact = contactWithOtherMembers();
-        window.history.pushState({}, '', `/#${contact._id}`);
+        navigateToChat(contact._id);
         // UpdateSelecetdChat(contact)
         setSelectedChat(contact);
         setActiveChat(true)
 
       } else if (res.status === 202) {
         setLoading(false);
-        window.history.pushState({}, '', `/`);
+        window.history.replaceState({}, '', `/`);
         setIsJoinPopUpOpen(false);
         setJoinPopUpData(null);
         toast.success(res.data.message)
       } else {
         setLoading(false);
-        window.history.pushState({}, '', `/`);
+        window.history.replaceState({}, '', `/`);
+        setIsJoinPopUpOpen(false);
+        setJoinPopUpData(null);
+        toast.error(res.response.data.message)
+      }
+
+
+
+      // setIsJoinPopUpOpen(false);
+      // setJoinPopUpData(null);
+    }
+    if (data.contactType === "group") {
+
+
+      const res = await joinGroupInvite(data._id);
+
+      if (res.status === 200) {
+        const contactWithOtherMembers = () => {
+          const contact = res.data.contact;
+          const contactOtherMembers = contact.members.filter(
+            member => member._id._id !== res.data.user._id
+          );
+          return {
+            ...contact,
+            otherMember: contactOtherMembers, // Array of others
+            lastMessage: contact.lastMessage
+          };
+        }
+        setLoading(false);
+        setIsJoinPopUpOpen(false);
+        setJoinPopUpData(null);
+        const contact = contactWithOtherMembers();
+        navigateToChat(contact._id);
+        // UpdateSelecetdChat(contact)
+        setSelectedChat(contact);
+        setActiveChat(true)
+
+      } else if (res.status === 202) {
+        setLoading(false);
+        window.history.replaceState({}, '', `/`);
+        setIsJoinPopUpOpen(false);
+        setJoinPopUpData(null);
+        toast.success(res.data.message)
+      } else {
+        setLoading(false);
+        window.history.replaceState({}, '', `/`);
         setIsJoinPopUpOpen(false);
         setJoinPopUpData(null);
         toast.error(res.response.data.message)
@@ -692,7 +799,7 @@ function AuthenticatedUser() {
                   }}
                   back={() => {
                     setDirection("back");
-                    window.history.pushState({}, '', `/`);
+                    window.history.replaceState({}, '', `/`);
                     setActiveChat(false);
                   }}
                   isMobile={isSmMd}
@@ -710,7 +817,7 @@ function AuthenticatedUser() {
       {(joinPopUpData !== null && isJoinPopUpOpen === true) && (
         <JoinPopUp isOpen={isJoinPopUpOpen} onClose={() => {
           setIsJoinPopUpOpen(false)
-          window.history.pushState({}, '', `/`);
+          window.history.replaceState({}, '', `/`);
         }} profilePicture={joinPopUpData?.details?.profile} contactData={joinPopUpData} loading={loading} setLoading={(data) => setLoading(data)} onJoin={(data) => handleJoin(data)} />
       )}
 

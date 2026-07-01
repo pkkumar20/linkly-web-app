@@ -4,6 +4,7 @@ import {
     Typography,
     ListItemSuffix,
     ListItem,
+    Spinner
 } from "@material-tailwind/react";
 import { RiUserAddLine, RiUserForbidLine } from "react-icons/ri";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,7 +13,7 @@ import UserAvatar from "../UserAvatar"
 import { AuthContext } from "../firebase hooks/AuthContext";
 import { RxTrash } from "react-icons/rx";
 import { LuMessageSquare } from "react-icons/lu";
-import { TbUserUp } from "react-icons/tb";
+import { TbUserUp, TbUserEdit } from "react-icons/tb";
 import AddMembers from './AddMembers';
 import Lottie from 'lottie-react';
 import myAnimation from "../lottie/404 errornotfound.json";
@@ -24,7 +25,7 @@ function MemberScreen({ Screen, chat, choose, onShare }) {
     const [showFab, setShowFab] = useState(true);
     const [openMenuId, setOpenMenuId] = useState(null); // Track which menu is open
     const [openAdddContact, setOpenAddContact] = useState(false);
-
+    const [loading, setLoading] = useState(false);
     const isAddMemberPushedRef = useRef(false);
 
     // Sync openAdddContact state with history
@@ -125,59 +126,73 @@ function MemberScreen({ Screen, chat, choose, onShare }) {
     const handleMenuClose = () => {
         setOpenMenuId(null);
     };
-    const handleBlock = (data) => {
-
+    const handleBlock = async (data) => {
         setFiltered([]);
         setIsSearching(false);
-        setSearch("")
+        setSearch("");
         const fd = new FormData();
         fd.append("userId", data._id);
         if (chat.contactType === "channel") {
             fd.append("channelId", chat._id);
-            blockUserInChanel(fd);
+            await blockUserInChanel(fd);
         } else {
             fd.append("groupId", chat._id);
-            blockUser(fd);
+            await blockUser(fd);
         }
-
     };
-    const handleRemove = (data) => {
+    const handleRemove = async (data) => {
         setFiltered([]);
         setIsSearching(false);
-        setSearch("")
+        setSearch("");
         const fd = new FormData();
         fd.append("userId", data._id);
         if (chat.contactType === "channel") {
             fd.append("channelId", chat._id);
-            removeUserInChanel(fd);
+            await removeUserInChanel(fd);
         } else {
             fd.append("groupId", chat._id);
-            removeUser(fd);
+            await removeUser(fd);
         }
-
     };
-    const handleAdd = (data) => {
+    const handleAdd = async (data) => {
         setFiltered([]);
         setIsSearching(false);
-        setSearch("")
+        setSearch("");
         const fd = new FormData();
         fd.append("userId", data._id);
         if (chat.contactType === "channel") {
             fd.append("channelId", chat._id);
-            addAdminInChanel(fd);
+            await addAdminInChanel(fd);
         } else {
             fd.append("groupId", chat._id);
-            addAdmin(fd);
+            await addAdmin(fd);
         }
-
     };
     const handleMenuItemClick = async (action, memberData) => {
+        setOpenMenuId(null); // Close menu after clicking an item
         if (action === "Delete") {
-            handleBlock(memberData);
+            try {
+                setLoading(true);
+                await handleBlock(memberData);
+            } finally {
+                setLoading(false);
+            }
         } else if (action === "Remove") {
-            handleRemove(memberData);
+            try {
+                setLoading(true);
+                await handleRemove(memberData);
+            } finally {
+                setLoading(false);
+            }
         } else if (action === "Promote to Admin") {
-            handleAdd(memberData);
+            try {
+                setLoading(true);
+                await handleAdd(memberData);
+            } finally {
+                setLoading(false);
+            }
+        } else if (action === "Edit Admin Rights" || action === " Edit Admin Rights") {
+            Screen("administration", memberData);
         } else if (action === "Send Message") {
             const userId = memberData._id;
             if (userId !== undefined && userId !== null) {
@@ -200,7 +215,14 @@ function MemberScreen({ Screen, chat, choose, onShare }) {
                     if (existingContact._id.toString() === chat._id.toString()) {
                         return;
                     } else {
-                        navigateToChat(existingContact);
+                        const contactOtherMembers = existingContact.otherMember || existingContact.members?.filter(
+                            member => (member._id?._id || member._id)?.toString() !== backendUser?._id?.toString()
+                        );
+                        const formattedContact = {
+                            ...existingContact,
+                            otherMember: contactOtherMembers,
+                        };
+                        navigateToChat(formattedContact);
                     }
                 } else {
                     const toastId = toast.loading("Adding contact...");
@@ -230,9 +252,7 @@ function MemberScreen({ Screen, chat, choose, onShare }) {
                     }
                 }
             }
-
         }
-        setOpenMenuId(null); // Close menu after clicking an item
     };
 
     const filterContacts2 = (keyWord) => {
@@ -308,6 +328,7 @@ function MemberScreen({ Screen, chat, choose, onShare }) {
                                     onOpen={() => handleMenuOpen(member._id._id)}
                                     onClose={handleMenuClose}
                                     onClick={handleMenuItemClick}
+                                    screen={(e) => Screen(e)}
                                 />
                             ))}
                         </List>
@@ -325,6 +346,7 @@ function MemberScreen({ Screen, chat, choose, onShare }) {
                                         onOpen={() => handleMenuOpen(member._id._id)}
                                         onClose={handleMenuClose}
                                         onClick={handleMenuItemClick}
+                                        screen={(e) => Screen(e)}
                                     />
                                 ))}
                             </List>
@@ -368,6 +390,7 @@ function MemberScreen({ Screen, chat, choose, onShare }) {
                 <div className="flex justify-end px-5 py-2">
                     <AnimatePresence exitBeforeEnter>
                         <motion.button
+                            disabled={loading}
                             onClick={() => setOpenAddContact(true)}
                             className="fixed bottom-7 w-14 h-14 bg-[#8763ea] rounded-full shadow-lg flex items-center justify-center hover:bg-[#6f43db]"
                             aria-label="Save"
@@ -377,7 +400,7 @@ function MemberScreen({ Screen, chat, choose, onShare }) {
                             exit="hidden"
                             style={{ willChange: "transform, opacity", zIndex: 50 }}
                         >
-                            <RiUserAddLine size={28} className='text-white' />
+                            {loading && <Spinner className="text-white" />}  {!loading && <RiUserAddLine size={28} className='text-white' />}
                         </motion.button>
                     </AnimatePresence>
                 </div>
@@ -412,11 +435,12 @@ function MemberScreen({ Screen, chat, choose, onShare }) {
     )
 }
 
-const CustomMenu = ({ data, onClick, chat, isOpen, onOpen, onClose }) => {
+const CustomMenu = ({ data, onClick, chat, isOpen, onOpen, onClose, screen }) => {
 
     const { backendUser, } = useContext(AuthContext);
     const [points, setPoints] = useState({ x: 0, y: 0 });
     const [origin, setOrigin] = useState("top left");
+
 
     const menuRef = useRef(null);
     const timerRef = useRef(null);
@@ -424,7 +448,10 @@ const CustomMenu = ({ data, onClick, chat, isOpen, onOpen, onClose }) => {
 
     // Check if this is the current user
     const isCurrentUser = data?._id?.toString() === backendUser?._id?.toString();
-
+    const isOwnerOpenMenu = chat.owner?.toString() === backendUser?._id?.toString();
+    const isAdminOpenMenu = chat.admins?.some(a => a._id === backendUser?._id?.toString());
+    const isAdmin = chat.admins.some(a => a._id === data?._id?.toString());
+    const owner = chat.owner?.toString() === data?._id?.toString();
     // --- 1. Event Handlers ---
 
     const handleContextMenu = (e) => {
@@ -564,7 +591,6 @@ const CustomMenu = ({ data, onClick, chat, isOpen, onOpen, onClose }) => {
     function formatLastSeen(isoDate) {
         const lastSeenDate = new Date(isoDate);
         const now = new Date();
-
         const diffMs = now - lastSeenDate; // difference in milliseconds
         const diffSeconds = Math.floor(diffMs / 1000);
         const diffMinutes = Math.floor(diffSeconds / 60);
@@ -639,7 +665,7 @@ const CustomMenu = ({ data, onClick, chat, isOpen, onOpen, onClose }) => {
                         </span>
                     </div>
                 </div>
-                <ListItemSuffix>{getRoll(data._id)}</ListItemSuffix>
+                {getRoll(data._id) && <ListItemSuffix>{getRoll(data._id)}</ListItemSuffix>}
             </ListItem>
 
             <AnimatePresence>
@@ -674,7 +700,7 @@ const CustomMenu = ({ data, onClick, chat, isOpen, onOpen, onClose }) => {
                                     Send Message
                                 </Typography>
                             </ListItem>
-                            <ListItem
+                            {(isOwnerOpenMenu && !isAdmin) && <ListItem
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onClick("Promote to Admin", data);
@@ -687,7 +713,24 @@ const CustomMenu = ({ data, onClick, chat, isOpen, onOpen, onClose }) => {
                                 <Typography className="text-[14px] font-semibold text-black ">
                                     Promote to Admin
                                 </Typography>
-                            </ListItem>
+                            </ListItem>}
+                            {(isOwnerOpenMenu && isAdmin) && <ListItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onClose();
+                                    screen("administration", data);
+                                    onClick("Edit Admin Rights", data);
+                                }}
+                                className="group flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-200 focus:bg-slate-50 active:bg-slate-50"
+                            >
+                                <div className="flex items-center justify-center w-5">
+                                    <TbUserEdit size={20} className="text-black " />
+                                </div>
+                                <Typography className="text-[14px] font-semibold text-black ">
+                                    Edit Admin Rights
+                                </Typography>
+                            </ListItem>}
+
 
                             <ListItem
                                 onClick={(e) => {

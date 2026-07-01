@@ -4,8 +4,8 @@ import { MdMyLocation, MdSend, MdSearch, MdClose, MdLocationOff } from 'react-ic
 import { motion, AnimatePresence } from 'framer-motion';
 
 const LocationPicker = ({ onClose, onSend }) => {
-    const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
     const MAPPLS_TOKEN = import.meta.env.VITE_MAPPLS_TOKEN;
+    const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
 
     const [viewState, setViewState] = useState({
         longitude: 77.2090,
@@ -13,11 +13,12 @@ const LocationPicker = ({ onClose, onSend }) => {
         zoom: 12
     });
     const [marker, setMarker] = useState({ latitude: 28.6139, longitude: 77.2090 });
+    const [currentCoords, setCurrentCoords] = useState(null); // Track actual GPS coordinates
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
 
-    // New states for permission and search tracking
+    // States for permission and search tracking
     const [permissionStatus, setPermissionStatus] = useState('pending');
     const [hasSearched, setHasSearched] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -35,7 +36,7 @@ const LocationPicker = ({ onClose, onSend }) => {
                     getCurrentLocation(false, true); // Block map render until we have the coords
                 } else {
                     if (result.state === 'denied') setPermissionStatus('denied');
-                    setIsLocationResolved(true); // Render map immediately with Delhi
+                    setIsLocationResolved(true); // Render map immediately with default coords
                     
                     // Trigger prompt if it's 'prompt'
                     if (result.state !== 'denied') {
@@ -54,6 +55,7 @@ const LocationPicker = ({ onClose, onSend }) => {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition((position) => {
                 const { latitude, longitude } = position.coords;
+                setCurrentCoords({ latitude, longitude });
                 updateMapCenter(latitude, longitude, 15);
                 setPermissionStatus('granted');
                 setHasSearched(false);
@@ -87,13 +89,14 @@ const LocationPicker = ({ onClose, onSend }) => {
 
     const handleSearch = async (e) => {
         e.preventDefault();
-        if (!searchQuery.trim() || !MAPBOX_TOKEN) return;
+        if (!searchQuery.trim() || !MAPPLS_TOKEN) return;
 
         setIsSearching(true);
         try {
-            const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true`);
+            const res = await fetch(`${SERVER_URL}/api/mappls-search?query=${encodeURIComponent(searchQuery)}&token=${MAPPLS_TOKEN}`);
             const data = await res.json();
-            setSearchResults(data.features || []);
+            const locations = data.suggestedLocations || data.copResults || data.features || [];
+            setSearchResults(locations);
         } catch (error) {
             console.error("Search error:", error);
         } finally {
@@ -101,12 +104,23 @@ const LocationPicker = ({ onClose, onSend }) => {
         }
     };
 
-    const handleSelectResult = (feature) => {
-        const [lng, lat] = feature.center;
-        updateMapCenter(lat, lng, 15);
+    // Directly select the location when clicked without opening any popups
+    const handleSelectResult = (place) => {
+        const lat = parseFloat(place.latitude || place.lat);
+        const lng = parseFloat(place.longitude || place.lng || place.lon);
+        if (!isNaN(lat) && !isNaN(lng)) {
+            updateMapCenter(lat, lng, 15);
+        }
         setSearchResults([]);
-        setSearchQuery(feature.place_name);
+        setSearchQuery(place.placeName || place.placeAddress || place.place_name || searchQuery);
         setHasSearched(true);
+    };
+
+    const isLocationDifferent = () => {
+        if (!currentCoords || !marker) return true;
+        const latDiff = Math.abs(marker.latitude - currentCoords.latitude);
+        const lngDiff = Math.abs(marker.longitude - currentCoords.longitude);
+        return latDiff > 0.0003 || lngDiff > 0.0003 || hasSearched;
     };
 
     const handleSend = async () => {
@@ -115,21 +129,10 @@ const LocationPicker = ({ onClose, onSend }) => {
             let finalAddress = searchQuery;
             
             try {
-                // Reverse geocode
-                const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${marker.longitude},${marker.latitude}.json?access_token=${MAPBOX_TOKEN}`);
+                const res = await fetch(`${SERVER_URL}/api/mappls-revgeocode?lat=${marker.latitude}&lng=${marker.longitude}&token=${MAPPLS_TOKEN}`);
                 const data = await res.json();
-                
-                if (data.features && data.features.length > 0) {
-                    const bestFeature = data.features.find(f => 
-                        f.place_type.includes('poi') || 
-                        f.place_type.includes('address') || 
-                        f.place_type.includes('neighborhood') ||
-                        f.place_type.includes('locality') ||
-                        f.place_type.includes('place') ||
-                        f.place_type.includes('district')
-                    ) || data.features[0];
-                    
-                    finalAddress = bestFeature.place_name;
+                if (data && data.address) {
+                    finalAddress = data.address;
                 }
             } catch (err) {
                 console.error("Reverse geocoding failed", err);
@@ -149,7 +152,7 @@ const LocationPicker = ({ onClose, onSend }) => {
         }
     };
 
-    const mapVisible = isLocationResolved; // Wait for location if granted
+    const mapVisible = isLocationResolved;
 
     // Initialize MapmyIndia Map
     useEffect(() => {
@@ -171,10 +174,23 @@ const LocationPicker = ({ onClose, onSend }) => {
                             zoomControl: false,
                             fullscreenControl: false,
                             search: false,
-                            location: false
+                            location: false,
+                            clickableIcons: false,
+                            poi: false,
+                            infoWindow: false,
+                            popups: false,
+                            popup: false
                         }
                     });
                     
+                    if (map && typeof map.on === 'function') {
+                        map.on("styleimagemissing", (e) => {
+                            if (map && typeof map.hasImage === 'function' && !map.hasImage(e.id)) {
+                                map.addImage(e.id, { width: 1, height: 1, data: new Uint8Array(4) });
+                            }
+                        });
+                    }
+
                     map.on("load", () => {
                         if (!isMounted) return;
                         mapRef.current = map;
@@ -193,6 +209,7 @@ const LocationPicker = ({ onClose, onSend }) => {
                             const lat = e.lngLat.lat;
                             const lng = e.lngLat.lng;
                             setMarker({ latitude: lat, longitude: lng });
+                            setHasSearched(true);
                             if (markerRef.current) {
                                 markerRef.current.setPosition({ lat, lng });
                             }
@@ -236,6 +253,18 @@ const LocationPicker = ({ onClose, onSend }) => {
                     transform: scale(0.6);
                     transform-origin: bottom left;
                     opacity: 0.8;
+                }
+                /* Disable all Mappls/Mapbox default native POI popups and info windows */
+                .picker-map-container .mapboxgl-popup,
+                .picker-map-container .mappls-popup,
+                .picker-map-container .mapmyindia-popup,
+                .picker-map-container .info-window,
+                .picker-map-container [class*="popup"],
+                .picker-map-container [class*="infoWindow"] {
+                    display: none !important;
+                    visibility: hidden !important;
+                    opacity: 0 !important;
+                    pointer-events: none !important;
                 }
             `}</style>
             <motion.div
@@ -341,9 +370,9 @@ const LocationPicker = ({ onClose, onSend }) => {
                                             exit={{ opacity: 0, y: -5 }}
                                             className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 max-h-72 overflow-y-auto overflow-x-hidden"
                                         >
-                                            {searchResults.map((result) => (
+                                            {searchResults.map((result, idx) => (
                                                 <div
-                                                    key={result.id}
+                                                    key={result.eLoc || result.id || idx}
                                                     onClick={() => handleSelectResult(result)}
                                                     className="flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 transition-colors"
                                                 >
@@ -351,8 +380,8 @@ const LocationPicker = ({ onClose, onSend }) => {
                                                         <MdSearch size={20} />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="font-semibold text-[15px] text-gray-800 truncate">{result.text}</div>
-                                                        <div className="text-[13px] text-gray-500 mt-0.5 truncate">{result.place_name}</div>
+                                                        <div className="font-semibold text-[15px] text-gray-800 truncate">{result.placeName || result.text || result.place_name}</div>
+                                                        <div className="text-[13px] text-gray-500 mt-0.5 truncate">{result.placeAddress || result.place_name}</div>
                                                     </div>
                                                 </div>
                                             ))}
@@ -423,7 +452,7 @@ const LocationPicker = ({ onClose, onSend }) => {
                                 ) : (
                                     <MdSend size={22} className={marker ? "animate-pulse" : ""} />
                                 )}
-                                {isSending ? "Getting Address..." : (permissionStatus === 'granted' && !hasSearched) ? "Send your current location" : "Send selected location"}
+                                {isSending ? "Getting Address..." : (permissionStatus === 'granted' && !isLocationDifferent()) ? "Send your current location" : "Send selected location"}
                             </button>
                         </motion.div>
                     )}

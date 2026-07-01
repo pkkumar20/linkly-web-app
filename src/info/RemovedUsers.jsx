@@ -4,6 +4,7 @@ import {
     Typography,
     ListItem,
     ListItemSuffix,
+    Spinner
 } from "@material-tailwind/react";
 import { UserPlusIcon, TrashIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import UserAvatar from "../UserAvatar"
@@ -15,8 +16,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Lottie from 'lottie-react';
 import myAnimation2 from "../lottie/404 errornotfound.json"
 function RemovedUSersScreen({ Screen, chat }) {
-    const { unBlockUser } = useContext(AuthContext);
-
+    const { unBlockUser, unBlockUserInChanel } = useContext(AuthContext);
+    const [loadingUserId, setLoadingUserId] = useState(null);
 
     const [openMenuId, setOpenMenuId] = useState(null); // Track which menu is open
     const [filtered, setFiltered] = useState([]);
@@ -54,19 +55,29 @@ function RemovedUSersScreen({ Screen, chat }) {
     const handleMenuClose = () => {
         setOpenMenuId(null);
     };
-    const handleRemove = (data) => {
-        const fd = new FormData();
-        fd.append("groupId", chat._id);
-        fd.append("userId", data._id);
-        unBlockUser(fd);
-
-    };
-    const handleMenuItemClick = (action, userData) => {
-        
-        if (action === "Add to Group") {
-            handleRemove(userData);
+    const handleRemove = async (data) => {
+        try {
+            setLoadingUserId(data._id);
+            const fd = new FormData();
+            fd.append("userId", data._id);
+            if (chat.contactType === "group") {
+                fd.append("groupId", chat._id);
+                await unBlockUser(fd);
+            } else if (chat.contactType === "channel") {
+                fd.append("channelId", chat._id);
+                await unBlockUserInChanel(fd);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoadingUserId(null);
         }
-        setOpenMenuId(null); // Close menu after clicking an item
+    };
+    const handleMenuItemClick = async (action, userData) => {
+        setOpenMenuId(null); // Close menu immediately on click
+        if (action === "Add to Group") {
+            await handleRemove(userData);
+        }
     };
     const filterContacts2 = (keyWord) => {
 
@@ -153,6 +164,7 @@ function RemovedUSersScreen({ Screen, chat }) {
                                     key={user._id}
                                     data={user}
                                     isOpen={openMenuId === user._id}
+                                    isLoading={loadingUserId === user._id}
                                     onOpen={() => handleMenuOpen(user._id)}
                                     onClose={handleMenuClose}
                                     onClick={handleMenuItemClick}
@@ -203,6 +215,7 @@ function RemovedUSersScreen({ Screen, chat }) {
                                     key={user._id}
                                     data={user}
                                     isOpen={openMenuId === user._id}
+                                    isLoading={loadingUserId === user._id}
                                     onOpen={() => handleMenuOpen(user._id)}
                                     onClose={handleMenuClose}
                                     onClick={handleMenuItemClick}
@@ -216,7 +229,7 @@ function RemovedUSersScreen({ Screen, chat }) {
     )
 }
 
-const CustomMenu = ({ chat, data, onClick, isOpen, onOpen, onClose }) => {
+const CustomMenu = ({ chat, data, onClick, isOpen, isLoading, onOpen, onClose }) => {
     
     const { backendUser } = useContext(AuthContext);
     const [points, setPoints] = useState({ x: 0, y: 0 });
@@ -235,16 +248,16 @@ const CustomMenu = ({ chat, data, onClick, isOpen, onOpen, onClose }) => {
         e.preventDefault();
         e.stopPropagation(); // Prevent event from bubbling to parent
 
-        // DON'T open menu if it's the current user
-        if (isCurrentUser) return;
+        // DON'T open menu if it's the current user or loading
+        if (isCurrentUser || isLoading) return;
 
         showMenu(e.clientX, e.clientY);
         onOpen(); // Notify parent to open this menu
     };
 
     const handleTouchStart = (e) => {
-        // DON'T open menu if it's the current user
-        if (isCurrentUser) return;
+        // DON'T open menu if it's the current user or loading
+        if (isCurrentUser || isLoading) return;
 
         const touch = e.touches[0];
         timerRef.current = setTimeout(() => {
@@ -260,8 +273,8 @@ const CustomMenu = ({ chat, data, onClick, isOpen, onOpen, onClose }) => {
     // --- 2. Positioning Logic (Cursor at top edge of menu) ---
 
     const showMenu = (cursorX, cursorY) => {
-        // This should never be called for current user, but double-check
-        if (isCurrentUser) return;
+        // DON'T open menu if it's the current user or loading
+        if (isCurrentUser || isLoading) return;
 
         const MENU_WIDTH = 224; // 224px (w-56)
         const MENU_HEIGHT = 120;
@@ -363,12 +376,12 @@ const CustomMenu = ({ chat, data, onClick, isOpen, onOpen, onClose }) => {
         >
             <ListItem
                 onContextMenu={handleContextMenu}
-                onTouchStart={isCurrentUser ? undefined : handleTouchStart}
-                onTouchEnd={isCurrentUser ? undefined : handleTouchEnd}
+                onTouchStart={(isCurrentUser || isLoading) ? undefined : handleTouchStart}
+                onTouchEnd={(isCurrentUser || isLoading) ? undefined : handleTouchEnd}
                 onClick={() => {
                     if (isOpen) onClose();
                 }}
-                className={`flex justify-between items-center w-full max-w-sm bg-white transition-all active:scale-[0.98] border border-transparent hover:bg-gray-100 rounded-xl ${isCurrentUser ? "cursor-default" : "cursor-pointer"
+                className={`flex justify-between items-center w-full max-w-sm bg-white transition-all active:scale-[0.98] border border-transparent hover:bg-gray-100 rounded-xl ${isCurrentUser || isLoading ? "cursor-default" : "cursor-pointer"
                     } ${isOpen ? "bg-gray-100 ring-1 ring-gray-200" : ""}`}
             >
                 <div className="flex items-center space-x-3 py-1 px-1">
@@ -386,6 +399,11 @@ const CustomMenu = ({ chat, data, onClick, isOpen, onOpen, onClose }) => {
                         </span>
                     </div>
                 </div>
+                {isLoading && (
+                    <ListItemSuffix>
+                        <Spinner className="h-5 w-5 text-green-600" />
+                    </ListItemSuffix>
+                )}
             </ListItem>
 
             <AnimatePresence>
@@ -424,6 +442,7 @@ const CustomMenu = ({ chat, data, onClick, isOpen, onOpen, onClose }) => {
                             <ListItem
                                 onClick={(e) => {
                                     e.stopPropagation();
+                                    onClose();
                                     onClick("Add to Group", data);
                                 }}
                                 className="group flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-green-50 focus:bg-green-50 active:bg-green-50"

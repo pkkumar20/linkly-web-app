@@ -51,46 +51,46 @@ export default function AddAdminsPopUp({ onShare, isOpen, onClose, onSendInviteL
       }
     },[userContacts])
 
+  const getContactDisplayName = (member) => {
+    if (!member) return "";
+    if (member.nickName) {
+      return member.nickLastName
+        ? member.nickName + " " + member.nickLastName
+        : member.nickName;
+    }
+    const otherPerson = member.otherMember?.[0]?._id;
+    if (otherPerson) {
+      return otherPerson.lastName
+        ? otherPerson.name + " " + otherPerson.lastName
+        : (otherPerson.name || "");
+    }
+    return member.name || "";
+  };
+
   const filterContacts2 = (keyWord) => {
-
+    if (!keyWord) return shortedContacts;
     return shortedContacts.filter(member => {
-      // Resolve display name for comemntact
-  
-
-      let displayName;
-
-      if (member.nickName) {
-        displayName = member.nickLastName
-          ? formatName(member.nickName) + " " + formatName(member.nickLastName)
-          : formatName(member.nickName);
-      } else if (member.otherMember
-[0]._id.name) {
-        displayName = member.otherMember
-[0]._id.name;
-      } else {
-        displayName = "";
-      }
-
-      // Filter by keyword (case-insensitive)
+      const displayName = getContactDisplayName(member);
       return displayName.toLowerCase().includes(keyWord.toLowerCase());
     });
   };
 
   const handleSerch = (value) => {
     setSearch(value);
-    if (value.length < 1) {
+    if (value.trim().length < 1) {
       setIsSearching(false);
+      setFiltered([]);
     } else {
       let fliter = filterContacts2(value);
-      fliter.sort((a, b) =>
-        a.name.localeCompare(b.name)
-      )
-      setFiltered(fliter)
-      setIsSearching(true)
+      fliter.sort((a, b) => {
+        const nameA = getContactDisplayName(a);
+        const nameB = getContactDisplayName(b);
+        return nameA.localeCompare(nameB);
+      });
+      setFiltered(fliter);
+      setIsSearching(true);
     }
-
-
-  }
+  };
   
     const formatName = (name) => {
         if (!name) return "";

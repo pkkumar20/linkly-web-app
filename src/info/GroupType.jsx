@@ -86,8 +86,8 @@ function GroupType({ Screen, chat }) {
                                         className="sr-only peer"
 
                                     />
-                                    <span className="w-6 h-6 rounded-full border-2 border-blue-400 flex items-center justify-center transition peer-checked:border-blue-400">
-                                        <span className={`w-3.5 h-3.5 rounded-full bg-blue-400 transition-opacity ${isPrivate ? "opacity-100" : "opacity-0"}`} />
+                                    <span className="w-6 h-6 rounded-full border-2 border-[#8763ea] flex items-center justify-center transition peer-checked:border-[#8763ea]">
+                                        <span className={`w-3.5 h-3.5 rounded-full bg-[#8763ea] transition-opacity ${isPrivate ? "opacity-100" : "opacity-0"}`} />
                                     </span>
                                 </label>
                             </ListItemPrefix>
@@ -116,8 +116,8 @@ function GroupType({ Screen, chat }) {
                                         className="sr-only peer"
 
                                     />
-                                    <span className="w-6 h-6 rounded-full border-2 border-blue-400 flex items-center justify-center transition peer-checked:border-blue-400">
-                                        <span className={`w-3.5 h-3.5 rounded-full bg-blue-400 transition-opacity ${isPrivate ? "opacity-0" : "opacity-100"}`} />
+                                    <span className="w-6 h-6 rounded-full border-2 border-[#8763ea] flex items-center justify-center transition peer-checked:border-[#8763ea]">
+                                        <span className={`w-3.5 h-3.5 rounded-full bg-[#8763ea] transition-opacity ${isPrivate ? "opacity-0" : "opacity-100"}`} />
                                     </span>
 
                                 </label>

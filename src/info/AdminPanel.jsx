@@ -8,7 +8,8 @@ import {
     ListItem,
     ListItemSuffix,
     Typography,
-    ListItemPrefix
+    ListItemPrefix,
+    Spinner
 } from "@material-tailwind/react";
 import UserAvatar from "../UserAvatar"
 import { ArrowLeftIcon } from "@heroicons/react/24/outline"
@@ -70,12 +71,12 @@ function LockToggle({ checked, onChange, showLock }) {
 }
 
 function AdminPanel({ Screen, chat, selectedAdmin }) {
-    
-    const { updateGroupPermissions, backendUser, dismissAdmin, removeAdminInChanel } = useContext(AuthContext);
 
+    const { updateGroupPermissions, backendUser, dismissAdmin, removeAdminInChanel } = useContext(AuthContext);
+    const [loading, setLoading] = useState(false)
     useEffect(() => {
         const inAdmin = chat.admins.some(admin => (admin._id?.toString() || admin?.toString()) === selectedAdmin._id?.toString());
-        
+
         if (!inAdmin) {
             Screen("main");
         }
@@ -102,21 +103,20 @@ function AdminPanel({ Screen, chat, selectedAdmin }) {
         if (isOwner) {
             setShowLock(false);
         } else {
-            setShowLock(!isEditingHimself);
+            setShowLock(true);
         }
 
     }, [chat]);
-    const isEditingHimself = selectedAdmin._id.toString() === backendUser._id.toString();
-    const isAdmin = chat.admins.some(user => user._id.toString() === backendUser._id.toString());
+
     const isOwner = chat.owner.toString() === backendUser._id.toString();
     const handleToggle = async (name) => {
-        if (!isOwner && !isEditingHimself) {
+        if (!isOwner) {
             toast.dismiss();
-            toast.error("Can not edit other admins permissions");
+            toast.error("Only owner can edit");
             return;
         } else {
             const newValue = !toogleValues[name];
-            
+
 
             const isAdmin = chat.admins.some(user => user._id.toString() === backendUser._id.toString());
             const isOwner = chat.owner.toString() === backendUser._id.toString();
@@ -143,7 +143,7 @@ function AdminPanel({ Screen, chat, selectedAdmin }) {
                 fd.append('value', newValue);
 
                 const res = await updateGroupPermissions(fd);
-                
+
 
             } catch (error) {
                 console.log(error);
@@ -192,19 +192,23 @@ function AdminPanel({ Screen, chat, selectedAdmin }) {
         }
     }
     const handleDismiss = async () => {
-        const fd = new FormData();
-        fd.append("userId", selectedAdmin._id);
-        if (chat.contactType === "group") {
-            fd.append("groupId", chat._id);
-
-            await dismissAdmin(fd);
-        } else if (chat.contactType === "channel") {
-            fd.append("channelId", chat._id);
-            await removeAdminInChanel(fd);
+        try {
+            setLoading(true);
+            const fd = new FormData();
+            fd.append("userId", selectedAdmin._id);
+            if (chat.contactType === "group") {
+                fd.append("groupId", chat._id);
+                await dismissAdmin(fd);
+            } else if (chat.contactType === "channel") {
+                fd.append("channelId", chat._id);
+                await removeAdminInChanel(fd);
+            }
+            Screen("main");
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
         }
-
-        Screen("main");
-
     }
     return (
         <div className="bg-gray-100 flex flex-col h-full" style={{ userSelect: 'none' }}>
@@ -308,18 +312,24 @@ function AdminPanel({ Screen, chat, selectedAdmin }) {
             </div>
 
             {selectedAdmin._id.toString() !== chat.owner.toString() && (
-                (isOwner === true || isEditingHimself) ? (<div className="bg-white flex flex-col mt-auto mb-3 shadow-md">
+                (isOwner === true || selectedAdmin._id.toString() === backendUser._id.toString()) ? (<div className="bg-white flex flex-col mt-auto mb-3 shadow-md">
                     <List>
-                        <ListItem className="hover:bg-red-100 my-1 focus:bg-red-100" onClick={() => handleDismiss()}>
+                        <ListItem
+                            disabled={loading}
+                            className="hover:bg-red-50 my-1 focus:bg-red-50 active:bg-red-100 transition-colors cursor-pointer"
+                            onClick={() => !loading && handleDismiss()}
+                        >
                             <div className="flex items-center gap-3 text-red-600">
                                 <ListItemPrefix>
-                                    <TbUserX size={26} className="text-red-600" />
+                                    {loading ? (
+                                        <Spinner className="h-5 w-5 text-red-600" />
+                                    ) : (
+                                        <TbUserX size={24} className="text-red-600" />
+                                    )}
                                 </ListItemPrefix>
-                                <div className="flex flex-col gap-1">
-                                    <Typography className="font-medium text-md text-red-600">
-                                        Dismiss Admin
-                                    </Typography>
-                                </div>
+                                <Typography className="font-medium text-md text-red-600">
+                                    {loading ? "Dismissing Admin..." : "Dismiss Admin"}
+                                </Typography>
                             </div>
                         </ListItem>
                     </List>

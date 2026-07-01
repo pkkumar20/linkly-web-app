@@ -4,6 +4,7 @@ import {
     List,
     ListItem,
     ListItemPrefix,
+    Spinner,
 } from "@material-tailwind/react";
 import {
     ArrowLeftIcon,
@@ -38,6 +39,8 @@ export default function Notifaction({ Choose }) {
     const [notification, setNotification] = useState(notifiaction);
     const [activeTab, setActiveTab] = useState('all');
     const [direction, setDirection] = useState(0);
+    const [loadingStates, setLoadingStates] = useState({});
+
     useEffect(() => {
         setNotification(notifiaction);
     }, [notifiaction]);
@@ -54,12 +57,26 @@ export default function Notifaction({ Choose }) {
         if (activeTab === 'all') return true;
         return n.status === activeTab;
     });
-    const handleApprove = async (contactId, notifiactionId) => {
-        
 
+    const handleApprove = async (contactId, notifiactionId) => {
+        setLoadingStates(prev => ({ ...prev, [notifiactionId]: 'approve' }));
         const res = await approveInvite(contactId, notifiactionId);
+        setLoadingStates(prev => ({ ...prev, [notifiactionId]: null }));
         if (res.status === 200) {
             toast.success(res.message);
+            setNotification(prev => prev.map(n => n._id === notifiactionId ? { ...n, status: 'approved' } : n));
+        } else {
+            toast.error(res.message);
+        }
+    }
+
+    const handleDecline = async (contactId, notifiactionId) => {
+        setLoadingStates(prev => ({ ...prev, [notifiactionId]: 'decline' }));
+        const res = await declineInvite(contactId, notifiactionId);
+        setLoadingStates(prev => ({ ...prev, [notifiactionId]: null }));
+        if (res.status === 200) {
+            toast.success(res.message);
+            setNotification(prev => prev.map(n => n._id === notifiactionId ? { ...n, status: 'rejected' } : n));
         } else {
             toast.error(res.message);
         }
@@ -172,10 +189,20 @@ export default function Notifaction({ Choose }) {
                                             {/* Buttons — only for pending */}
                                             {notif.status === 'pending' && (
                                                 <div className="flex gap-2 w-full mt-1 pl-14">
-                                                    <button onClick={() => handleApprove(notif.groupId._id, notif._id)} className="flex-1 py-1.5 rounded-lg text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 active:bg-blue-700 transition-colors">
+                                                    <button 
+                                                        disabled={loadingStates[notif._id]}
+                                                        onClick={() => handleApprove(notif.groupId._id, notif._id)} 
+                                                        className="flex items-center justify-center gap-2 flex-1 py-1.5 rounded-lg text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 active:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        {loadingStates[notif._id] === 'approve' && <Spinner className="h-4 w-4" />}
                                                         Approve
                                                     </button>
-                                                    <button className="flex-1 py-1.5 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-colors">
+                                                    <button 
+                                                        disabled={loadingStates[notif._id]}
+                                                        onClick={() => handleDecline(notif.groupId._id, notif._id)} 
+                                                        className="flex items-center justify-center gap-2 flex-1 py-1.5 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        {loadingStates[notif._id] === 'decline' && <Spinner className="h-4 w-4" />}
                                                         Decline
                                                     </button>
                                                 </div>

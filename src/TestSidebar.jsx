@@ -17,77 +17,86 @@ import {
 } from "@heroicons/react/24/outline";
 // ── Custom SVG Icons ──
 const ProfileIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" fill="none" />
-        <path d="M5 20c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-    </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" fill="none" />
+    <path d="M5 20c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+  </svg>
 );
 
 const NewGroupIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" fill="none" />
-        <path d="M16 11a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" strokeWidth="1.8" fill="none" />
-        <path d="M2.5 19.5c0-2.5 2.2-4.5 5-4.5h3c2.8 0 5 2.5 5 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-        <path d="M15 15.5c1.5 0 3 1.2 3 2.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-        <path d="M19 19v-4m-2 2h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-    </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" fill="none" />
+    <path d="M16 11a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" strokeWidth="1.8" fill="none" />
+    <path d="M2.5 19.5c0-2.5 2.2-4.5 5-4.5h3c2.8 0 5 2.5 5 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    <path d="M15 15.5c1.5 0 3 1.2 3 2.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    <path d="M19 19v-4m-2 2h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+  </svg>
 );
 
 const NewChannelIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
-        <path d="M15.54 8.46a5 5 0 010 7.07" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-        <path d="M19 19v-4m-2 2h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-    </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+    <path d="M15.54 8.46a5 5 0 010 7.07" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    <path d="M19 19v-4m-2 2h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+  </svg>
 );
 
 const ContactsIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <rect x="4" y="3" width="14" height="18" rx="2" stroke="currentColor" strokeWidth="1.8" fill="none" />
-        <path d="M12 11a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" strokeWidth="1.8" fill="none" />
-        <path d="M8 16c0-1.5 1.5-3 4-3s4 1.5 4 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-        <line x1="20" y1="7" x2="22" y2="7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        <line x1="20" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        <line x1="20" y1="17" x2="22" y2="17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <rect x="4" y="3" width="14" height="18" rx="2" stroke="currentColor" strokeWidth="1.8" fill="none" />
+    <path d="M12 11a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" strokeWidth="1.8" fill="none" />
+    <path d="M8 16c0-1.5 1.5-3 4-3s4 1.5 4 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    <line x1="20" y1="7" x2="22" y2="7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <line x1="20" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <line x1="20" y1="17" x2="22" y2="17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
 );
 
 const GroupsIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <circle cx="12" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.8" fill="none" />
-        <path d="M5.5 20.5c0-2.8 2.7-5 6.5-5s6.5 2.2 6.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-        <path d="M18 10a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke="currentColor" strokeWidth="1.8" fill="none" />
-        <path d="M21 17.5c0-1.5-1.5-2.8-3.5-3.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-        <path d="M6 10a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" stroke="currentColor" strokeWidth="1.8" fill="none" />
-        <path d="M3 17.5c0-1.5 1.5-2.8 3.5-3.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-    </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <circle cx="12" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.8" fill="none" />
+    <path d="M5.5 20.5c0-2.8 2.7-5 6.5-5s6.5 2.2 6.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    <path d="M18 10a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke="currentColor" strokeWidth="1.8" fill="none" />
+    <path d="M21 17.5c0-1.5-1.5-2.8-3.5-3.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    <path d="M6 10a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" stroke="currentColor" strokeWidth="1.8" fill="none" />
+    <path d="M3 17.5c0-1.5 1.5-2.8 3.5-3.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+  </svg>
 );
 
 const ChannelsIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
-        <path d="M15.54 8.46a5 5 0 010 7.07" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-        <path d="M19.07 4.93a10 10 0 010 14.14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-    </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+    <path d="M15.54 8.46a5 5 0 010 7.07" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    <path d="M19.07 4.93a10 10 0 010 14.14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+  </svg>
 );
 
 const NotificationIcon = ({ size = 24, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <path d="M18 15h2a1 1 0 011 1v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-1a1 1 0 011-1h2V9a6 6 0 1112 0v6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
-        <path d="M10 18v1a2 2 0 104 0v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-    </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M18 15h2a1 1 0 011 1v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-1a1 1 0 011-1h2V9a6 6 0 1112 0v6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+    <path d="M10 18v1a2 2 0 104 0v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+  </svg>
 );
 export default function Sidebar({ Choose }) {
   const [open, setOpen] = React.useState(0);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const { backendUser, getorsetProfile } = useContext(AuthContext);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+  useEffect(() => {
+    if (backendUser.notifiaction && backendUser.notifiaction.length > 0) {
+      const getNotificationCount = backendUser.notifiaction.filter(notify => notify.status === "pending");
+
+      setUnreadCount(getNotificationCount.length);
+    }
+
+  }, [backendUser.notifiaction])
   const handleOpen = (value) => setOpen(open === value ? 0 : value);
   const openDrawer = () => setIsDrawerOpen(true);
   const closeDrawer = () => setIsDrawerOpen(false);
   useEffect(() => {
     const gt = async () => {
       let data = await getorsetProfile();
-      
+
     }
     gt()
 
@@ -187,18 +196,32 @@ export default function Sidebar({ Choose }) {
               Channels
             </ListItem>
             <ListItem onClick={() => handleScreen("Notification")} className="font-medium">
-              <div className="w-full flex items-center justify-center">
+              {unreadCount > 0 && (
+                <div className="w-full flex items-center justify-center">
+                  <ListItemPrefix>
+                    <NotificationIcon size={26} className="text-gray-600" />
+                  </ListItemPrefix>
+                  Notification
+
+                  <div className="ml-auto ">
+
+                    <Badge className="" color="red"></Badge>
+
+                  </div>
+                </div>)}
+              {unreadCount == 0 && (
+
                 <ListItemPrefix>
                   <NotificationIcon size={26} className="text-gray-600" />
                 </ListItemPrefix>
-                Notification
 
-                <div className="ml-auto ">
 
-                  <Badge className="" color="red"></Badge>
+              )}
+              {unreadCount == 0 && (
 
-                </div>
-              </div>
+                "Notification"
+
+              )}
             </ListItem>
           </List>
         </Card>

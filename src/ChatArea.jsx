@@ -218,6 +218,42 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
     const [loadingOlder, setLoadingOlder] = useState(false);
     const [selectedMessages, setSelectedMessages] = useState([]);
+    const isSelectionPushedRef = useRef(false);
+
+    // Push history state when selection mode is active to support browser back button
+    useEffect(() => {
+        if (selectedMessages.length > 0 && !isSelectionPushedRef.current) {
+            const sessionId = Date.now();
+            isSelectionPushedRef.current = sessionId;
+            window.history.pushState(
+                { selectionSession: sessionId },
+                '',
+                window.location.pathname + window.location.hash
+            );
+        } else if (selectedMessages.length === 0 && isSelectionPushedRef.current) {
+            if (window.history.state?.selectionSession === isSelectionPushedRef.current) {
+                window.history.back();
+            }
+            isSelectionPushedRef.current = false;
+        }
+    }, [selectedMessages.length]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (isSelectionPushedRef.current) {
+                if (e.state?.selectionSession !== isSelectionPushedRef.current) {
+                    isSelectionPushedRef.current = false;
+                    setSelectedMessages([]);
+                }
+            } else if (e.state?.selectionSession) {
+                const newState = { ...e.state };
+                delete newState.selectionSession;
+                window.history.replaceState(newState, '');
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
     const hasMoreMessagesCache = useRef({});
     const skipRef = useRef(0);
     const isLoadingOlder = useRef(false);
@@ -234,6 +270,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     const [contextMenuClosing, setContextMenuClosing] = useState(false);
     const [showReactionPicker, setShowReactionPicker] = useState(false);
     const [reactionPickerPosition, setReactionPickerPosition] = useState({ top: 0, left: 0 });
+    const [showScrollBottom, setShowScrollBottom] = useState(false);
 
     const contextMenuRef = useRef(null);
     const reactionPickerRef = useRef(null);
@@ -248,7 +285,33 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     // placing index 0 at the actual bottom of the scroll container.
     const messages = useMemo(() => {
         if (!currentChatData) return [];
-        return [...currentChatData].sort((a, b) => new Date(a.time) - new Date(b.time));
+        const seenIds = new Set();
+        const unique = [];
+        for (const m of currentChatData) {
+            const idStr = m._id?.toString();
+            if (idStr && !seenIds.has(idStr)) {
+                seenIds.add(idStr);
+                unique.push(m);
+            } else if (!idStr) {
+                unique.push(m);
+            }
+        }
+        return unique.sort((a, b) => new Date(a.time) - new Date(b.time));
+    }, [currentChatData]);
+
+    // Clean up selected messages if they are deleted (e.g. by another user via socket)
+    useEffect(() => {
+        if (currentChatData) {
+            const currentIds = new Set(currentChatData.map(m => m._id?.toString()));
+            setSelectedMessages(prev => {
+                if (prev.length === 0) return prev;
+                const validSelected = prev.filter(id => currentIds.has(id?.toString()));
+                if (validSelected.length !== prev.length) {
+                    return validSelected;
+                }
+                return prev;
+            });
+        }
     }, [currentChatData]);
 
     const getLocalDateString = (timestampOrString) => {
@@ -508,33 +571,47 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         }
     }, [contextMenuOpen, showReactionPicker, showEmojiPicker]);
 
-    // Close context menu when mouse leaves the container bounds.
-    // Uses mousemove + getBoundingClientRect so it works regardless of
-    // child portals, overflow:visible, or EmojiPicker positioning.
+    // Close context menu when mouse leaves the container bounds with buffer zone & grace period.
     useEffect(() => {
-        if (!contextMenuOpen) return;
+        if (!contextMenuOpen || !contextMenuVisible || contextMenuClosing) return;
+        let leaveTimeout = null;
         let rafId;
+        const BUFFER = 50; // generous 50px buffer zone around context menu to prevent accidental closes while selecting options
+
         const handleMouseMove = (e) => {
             cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(() => {
                 if (!contextMenuRef.current) return;
                 const rect = contextMenuRef.current.getBoundingClientRect();
-                if (
-                    e.clientX < rect.left ||
-                    e.clientX > rect.right ||
-                    e.clientY < rect.top ||
-                    e.clientY > rect.bottom
-                ) {
-                    closeContextMenu();
+                const isInsideBuffer = (
+                    e.clientX >= rect.left - BUFFER &&
+                    e.clientX <= rect.right + BUFFER &&
+                    e.clientY >= rect.top - BUFFER &&
+                    e.clientY <= rect.bottom + BUFFER
+                );
+
+                if (isInsideBuffer) {
+                    if (leaveTimeout) {
+                        clearTimeout(leaveTimeout);
+                        leaveTimeout = null;
+                    }
+                } else {
+                    if (!leaveTimeout) {
+                        leaveTimeout = setTimeout(() => {
+                            closeContextMenu();
+                        }, 120);
+                    }
                 }
             });
         };
+
         document.addEventListener('mousemove', handleMouseMove);
         return () => {
             document.removeEventListener('mousemove', handleMouseMove);
             cancelAnimationFrame(rafId);
+            if (leaveTimeout) clearTimeout(leaveTimeout);
         };
-    }, [contextMenuOpen]);
+    }, [contextMenuOpen, contextMenuVisible, contextMenuClosing]);
 
 
     const calculateMenuPosition = (clickX, clickY, menuW, menuH) => {
@@ -670,12 +747,12 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
 
         if (retryParams.type === "text") {
             try {
-                const res = await sendTextMessage(chat._id, retryParams.text);
-                if (res?.status === 200 && res?.data?.message) {
-                    setCCd({ ...res.data.message, _replaced: pendingId });
-                } else {
-                    setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
-                }
+                await sendTextMessage(chat._id, retryParams.text);
+                // if (res?.status === 200 && res?.data?.message) {
+                //     setCCd({ ...res.data.message, _replaced: pendingId });
+                // } else {
+                //     setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
+                // }
             } catch (err) {
                 setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
             }
@@ -715,7 +792,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 fd.append("chatType", pType);
 
                 try {
-                    const res = await sendReply(fd, {
+                    await sendReply(fd, {
                         onUploadProgress: (progressEvent) => {
                             const progress = Math.min(85, Math.round((progressEvent.loaded * 100) / progressEvent.total));
                             const msgEl = document.querySelector(`[data-msg-id="${pendingId}"]`);
@@ -728,11 +805,11 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                         }
                     });
 
-                    if (res?.status === 200 && res?.data?.message) {
-                        setCCd({ ...res.data.message, _replaced: pendingId });
-                    } else {
-                        setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
-                    }
+                    // if (res?.status === 200 && res?.data?.message) {
+                    //     setCCd({ ...res.data.message, _replaced: pendingId });
+                    // } else {
+                    //     setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
+                    // }
                 } catch (err) {
                     setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
                 }
@@ -760,7 +837,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 fd.append("contactId", chat._id);
 
                 try {
-                    const res = await apiCall(fd, {
+                    await apiCall(fd, {
                         onUploadProgress: (progressEvent) => {
                             const progress = Math.min(85, Math.round((progressEvent.loaded * 100) / progressEvent.total));
                             const msgEl = document.querySelector(`[data-msg-id="${pendingId}"]`);
@@ -773,11 +850,11 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                         }
                     });
 
-                    if (res?.status === 200 && res?.data?.message) {
-                        setCCd({ ...res.data.message, _replaced: pendingId });
-                    } else {
-                        setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
-                    }
+                    // if (res?.status === 200 && res?.data?.message) {
+                    //     setCCd({ ...res.data.message, _replaced: pendingId });
+                    // } else {
+                    //     setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
+                    // }
                 } catch (err) {
                     setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
                 }
@@ -805,7 +882,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 fd.append("contactId", chat._id);
 
                 try {
-                    const res = await apiCall(fd, {
+                    await apiCall(fd, {
                         onUploadProgress: (progressEvent) => {
                             const progress = Math.min(85, Math.round((progressEvent.loaded * 100) / progressEvent.total));
                             const msgEl = document.querySelector(`[data-msg-id="${pendingId}"]`);
@@ -818,11 +895,11 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                         }
                     });
 
-                    if (res?.status === 200 && res?.data?.message) {
-                        setCCd({ ...res.data.message, _replaced: pendingId });
-                    } else {
-                        setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
-                    }
+                    // if (res?.status === 200 && res?.data?.message) {
+                    //     setCCd({ ...res.data.message, _replaced: pendingId });
+                    // } else {
+                    //     setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
+                    // }
                 } catch (err) {
                     setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
                 }
@@ -845,6 +922,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 if (forwardMessagesData[0].isForwardOne === true && forwardMessagesData[0].isForwardOne !== null && forwardMessagesData[0].isForwardOne !== undefined) {
                     // Single media forward
                     const fwd = forwardMessagesData[0];
+                    setForwardMessagesData([]);
                     const res = await forwardOneMedia(chat._id, fwd._id, fwd.type, fwd.media);
                     if (res?.data?.message) {
                         setCCd(res.data.message);
@@ -859,12 +937,11 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 }
                 else {
 
-
+                    const data = [...forwardMessagesData];
+                    setForwardMessagesData([]);
+                    const timeFilterdata = data.sort((a, b) => new Date(a.time) - new Date(b.time));
                     // Multiple messages forward
-                    const res = await forwardMessages(chat._id, forwardMessagesData.map(m => m._id));
-                    if (res?.data?.messages) {
-                        res.data.messages.forEach(msg => setCCd(msg));
-                    }
+                    await forwardMessages(chat._id, timeFilterdata.map(m => m._id), timeFilterdata[0].forContact);
                     toast.success(`Messages forwarded`);
                 }
                 setForwardMessagesData([]);
@@ -959,14 +1036,6 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 const res = await sendTextMessage(chat._id, sentMessage);
                 if (res?.status === 200 && res?.data?.message) {
                     setCCd({ ...res.data.message, _replaced: pendingId });
-                } else {
-                    setCCd(prev => prev.map(m => m._id === pendingId ? {
-                        ...m,
-                        _isPending: false,
-                        _isError: true,
-                        _retryParams: { type: "text", text: sentMessage },
-                        _onRetry: () => handleRetrySend(pendingId, { type: "text", text: sentMessage })
-                    } : m));
                 }
             } catch (err) {
                 setCCd(prev => prev.map(m => m._id === pendingId ? {
@@ -988,8 +1057,49 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     const handleSendLocation = async (location) => {
         setShowLocationPicker(false);
 
+        const pendingId = `pending_location_${Date.now()}`;
+        const pendingMsg = {
+            _id: pendingId,
+            content: 'Location',
+            sender: { _id: backendUser._id, profile: backendUser.profile },
+            chatType: 'location',
+            location: {
+                longitude: location.longitude,
+                latitude: location.latitude,
+                address: location.address,
+            },
+            locationDetails: {
+                coordinates: [location.longitude, location.latitude],
+                address: location.address,
+            },
+            time: new Date().toISOString(),
+            delivered: false,
+            seenBy: [],
+            forContact: chat._id,
+            _isPending: true,
+        };
 
-        await sendLocationMessage(chat._id, { longitude: location.longitude, latitude: location.latitude, address: location.address });
+        setCCd(pendingMsg);
+
+        setTimeout(() => {
+            const scrollContainer = document.getElementById('chat-scroll-container');
+            if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 50);
+
+        try {
+            await sendLocationMessage(chat._id, {
+                longitude: location.longitude,
+                latitude: location.latitude,
+                address: location.address,
+            });
+            // if (res?.status === 200 && res?.data?.message) {
+            //     setCCd({ ...res.data.message, _replaced: pendingId });
+            // } else {
+            //     setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
+            // }
+        } catch (err) {
+            setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
+        }
     };
 
     const handleSendContact = async (selectedContact) => {
@@ -1012,7 +1122,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
             contactDetails: {
                 name: contactName,
                 phoneNumber: contactPhone,
-                Id: selectedContact.otherMember?.[0]?._id._id,
+                Id: otherUser,
             },
             time: new Date().toISOString(),
             delivered: false,
@@ -1020,6 +1130,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
             forContact: chat._id,
             _isPending: true,
         };
+
         setCCd(pendingMsg);
 
         // Scroll to bottom
@@ -1029,16 +1140,16 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         }, 50);
 
         try {
-            const res = await sendContactMessage(chat._id, {
+            await sendContactMessage(chat._id, {
                 name: contactName,
                 phoneNumber: contactPhone,
                 contactUserId: contactUserId,
             });
-            if (res?.status === 200 && res?.data?.message) {
-                setCCd({ ...res.data.message, _replaced: pendingId });
-            } else {
-                setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
-            }
+            // if (res?.status === 200 && res?.data?.message) {
+            //     setCCd({ ...res.data.message, _replaced: pendingId });
+            // } else {
+            //     setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
+            // }
         } catch (err) {
             setCCd(prev => prev.map(m => m._id === pendingId ? { ...m, _isPending: false, _isError: true } : m));
         }
@@ -1046,6 +1157,8 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
 
     const handleContextMenu = (e, message) => {
         e.preventDefault();
+
+        if (selectedMessages.length > 0) return;
 
         if (contextMenuOpen) {
             closeContextMenu(true);
@@ -1309,10 +1422,25 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         setMessageToDelete(msg);
     };
 
-    const handleScroll = () => {
+    const handleScroll = (e) => {
         if (showEmojiPicker) setShowEmojiPicker(false);
         if (showReactionPicker) closeReactionPicker();
         if (contextMenuOpen) closeContextMenu(true);
+        if (e && e.target) {
+            if (Math.abs(e.target.scrollTop) > 200) {
+                setShowScrollBottom(true);
+            } else {
+                setShowScrollBottom(false);
+            }
+        }
+    };
+
+    const scrollToBottom = () => {
+        const container = document.getElementById("chat-scroll-container");
+        if (container) {
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+            setShowScrollBottom(false);
+        }
     };
 
     const handleFileSelected = (file, type) => {
@@ -1326,6 +1454,63 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         setSelectionSource('menu');
         setShowEmojiPicker(false);
         setShowReactionPicker(false);
+    };
+
+    const handlePaste = (e) => {
+        const clipboardData = e.clipboardData || window.clipboardData;
+        if (!clipboardData) return;
+
+        const items = Array.from(clipboardData.items || []);
+        const filesToUpload = [];
+
+        for (const item of items) {
+            if (item.kind === 'file') {
+                const file = item.getAsFile();
+                if (file) {
+                    let type = 'document';
+                    if (file.type.startsWith('image/')) {
+                        if (permissions.canSendPhotos === false) continue;
+                        type = 'photo';
+                    } else if (file.type.startsWith('video/')) {
+                        if (permissions.canSendVideos === false) continue;
+                        type = 'video';
+                    } else {
+                        if (permissions.canSendFiles === false) continue;
+                        type = 'document';
+                    }
+                    filesToUpload.push({ file, type });
+                }
+            }
+        }
+
+        if (filesToUpload.length === 0 && clipboardData.files && clipboardData.files.length > 0) {
+            for (const file of Array.from(clipboardData.files)) {
+                let type = 'document';
+                if (file.type.startsWith('image/')) {
+                    if (permissions.canSendPhotos === false) continue;
+                    type = 'photo';
+                } else if (file.type.startsWith('video/')) {
+                    if (permissions.canSendVideos === false) continue;
+                    type = 'video';
+                } else {
+                    if (permissions.canSendFiles === false) continue;
+                    type = 'document';
+                }
+                filesToUpload.push({ file, type });
+            }
+        }
+
+        if (filesToUpload.length > 0) {
+            e.preventDefault();
+            if (!permissions.canSendMedia) {
+                toast.error("You are not allowed to send media in this chat");
+                return;
+            }
+            setSelectedFiles(prev => [...prev, ...filesToUpload]);
+            setSelectionSource('paste');
+            setShowEmojiPicker(false);
+            setShowReactionPicker(false);
+        }
     };
 
     const handleSendMedia = async (files, caption) => {
@@ -1396,6 +1581,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
         // Create the optimistic pending message
         const pendingMsg = {
             _id: pendingId,
+            _clientKey: pendingId,
             content: caption || '',
             sender: { _id: backendUser._id, profile: backendUser.profile },
             chatType: pendingChatType,
@@ -1605,6 +1791,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 if (res?.status === 200 && res?.data?.message) {
                     const realMsg = res.data.message;
 
+                    // Keep using local blob URLs for seamless transition (no image flash)
                     if (realMsg.images?.length === localImages.length) {
                         realMsg.images = realMsg.images.map((img, i) => ({
                             ...img,
@@ -1619,15 +1806,6 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                     }
 
                     setCCd({ ...realMsg, _replaced: pendingId });
-                } else {
-                    console.error("Upload failed:", res);
-                    setCCd(prev => prev.map(m => m._id === pendingId ? {
-                        ...m,
-                        _isPending: false,
-                        _isError: true,
-                        _retryParams: { type: "media", files, caption, chatType: pendingChatType },
-                        _onRetry: () => handleRetrySend(pendingId, { type: "media", files, caption, chatType: pendingChatType })
-                    } : m));
                 }
             } catch (err) {
                 console.error("Upload error:", err);
@@ -1954,11 +2132,16 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                             inverse={true}
                         >
                             {displayedMessages.slice().reverse().map((chatMsg, visualIndex, reversedArray) => {
+                                if (chatMsg === null) return null;
+
+
                                 const prevMsgChronological = visualIndex < reversedArray.length - 1 ? reversedArray[visualIndex + 1] : null;
                                 const showDateLabel = !prevMsgChronological || new Date(chatMsg.time).toDateString() !== new Date(prevMsgChronological.time).toDateString();
 
+
+
                                 return (
-                                    <div key={chatMsg._id}>
+                                    <div key={chatMsg._clientKey || chatMsg._id}>
                                         {showDateLabel && (
                                             <DateLabel
                                                 dateText={getDateLabel(new Date(chatMsg.time))}
@@ -2214,6 +2397,14 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                                         />
                                         <MenuItem onClick={onDelete} icon={<MdOutlineDeleteOutline size={19} />} text="Delete" danger />
                                     </>
+                                ) : contextMenuMessage?.chatType === 'label' ? (
+                                    <>
+                                        <MenuItem onClick={onSelect} icon={<GoCheckCircle size={19} />} text="Select" />
+                                        {handleIsDeleteAllowed() ?
+                                            <MenuItem onClick={onDelete} icon={<MdOutlineDeleteOutline size={19} />} text="Delete" danger />
+                                            : null
+                                        }
+                                    </>
                                 ) : (
                                     <>
                                         {permissions.canSendText && <MenuItem onClick={onReply} icon={<BsReply size={19} />} text="Reply" />}
@@ -2275,6 +2466,20 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 </>
             )}
 
+            <AnimatePresence>
+                {showScrollBottom && (
+                    <motion.button
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        onClick={scrollToBottom}
+                        className="absolute bottom-[80px] right-4 md:right-8 lg:right-16 z-20 p-2 bg-white rounded-full shadow-md text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors cursor-pointer flex items-center justify-center border border-gray-100"
+                    >
+                        <MdKeyboardArrowDown size={32} />
+                    </motion.button>
+                )}
+            </AnimatePresence>
+
             {showReactionPicker && (
                 <div ref={reactionPickerRef} className="animate-picker origin-bottom" style={{
                     position: "absolute",
@@ -2301,14 +2506,16 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                             <span className="select-none cursor-pointer text-lg text-[#8763ea] font-medium">{selectedMessages.length} Selected</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button onClick={() => {
-                                const hasInvalid = currentChatData.some(m => selectedMessages.includes(m._id) && (m._isPending || m._isError || (String(m._id).startsWith('pending') && !m._realId)));
-                                if (hasInvalid) {
-                                    toast.error("Cannot forward messages that haven't finished sending.");
-                                    return;
-                                }
-                                setShowForwardPopup(true);
-                            }} className="select-none px-4 py-2 text-[#8763ea] font-medium hover:bg-[#8763ea]/10 rounded-lg transition-colors">Forward</button>
+                            {!currentChatData.some(m => selectedMessages.includes(m._id) && m.chatType === 'label') && (
+                                <button onClick={() => {
+                                    const hasInvalid = currentChatData.some(m => selectedMessages.includes(m._id) && (m._isPending || m._isError || (String(m._id).startsWith('pending') && !m._realId)));
+                                    if (hasInvalid) {
+                                        toast.error("Cannot forward messages that haven't finished sending.");
+                                        return;
+                                    }
+                                    setShowForwardPopup(true);
+                                }} className="select-none px-4 py-2 text-[#8763ea] font-medium hover:bg-[#8763ea]/10 rounded-lg transition-colors">Forward</button>
+                            )}
                             {handleIsDeleteAllowed() && (
                                 <button onClick={() => {
                                     const hasInvalid = currentChatData.some(m => selectedMessages.includes(m._id) && (m._isPending || m._isError || (String(m._id).startsWith('pending') && !m._realId)));
@@ -2428,6 +2635,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                                     type="text"
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
+                                    onPaste={handlePaste}
                                     placeholder={permissions.canSendText ? "Message" : "You can't send text messages"}
                                     disabled={!permissions.canSendText}
                                     className={`select-none flex-1 min-w-0 max-w-full text-[15px] outline-none bg-transparent pl-1 ${permissions.canSendText ? 'text-black' : 'text-gray-400 cursor-not-allowed'}`}
@@ -2596,7 +2804,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 onDelete={async () => {
                     const selectedIds = [...selectedMessages];
                     const messagesToDeleteObjs = currentChatData.filter(m => selectedIds.includes(m._id));
-                    
+
                     setShowDeleteMultiplePopup(false);
                     setSelectedMessages([]);
 
@@ -2624,7 +2832,7 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                 onDelete={async () => {
                     const msg = messageToDelete;
                     setMessageToDelete(null);
-                    
+
                     // 1. Trigger collapse animation
                     setCCd(prev => prev.map(m => m._id === msg._id ? { ...m, _isDeleting: true } : m));
 

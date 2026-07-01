@@ -15,7 +15,7 @@ import AddAdminsPopUp from './AddAdminPopUp';
 import Lottie from 'lottie-react';
 import myAnimation from "../lottie/404 errornotfound.json"
 import { formatName } from '../helper/formatName';
-function AdministrationScreen({ Screen, chat }) {
+function AdministrationScreen({ Screen, chat, initialSelectedAdmin }) {
     const { addAdmin, backendUser, addAdminInChanel } = useContext(AuthContext)
     useEffect(() => {
         const isAdmin = chat.admins.some(user => user._id.toString() === backendUser._id.toString());
@@ -63,7 +63,7 @@ function AdministrationScreen({ Screen, chat }) {
         };
     }, []);
 
-    const [screen, setScreen] = useState('main');
+    const [screen, setScreen] = useState(() => initialSelectedAdmin ? 'second' : 'main');
 
     const isAdminScreenPushedRef = useRef(false);
 
@@ -102,7 +102,22 @@ function AdministrationScreen({ Screen, chat }) {
         };
     }, []);
     const [showFab, setShowFab] = useState(true);
-    const [selected, setSelected] = useState(null);
+    const [selected, setSelected] = useState(() => {
+        if (!initialSelectedAdmin) return null;
+        const adminIdStr = (initialSelectedAdmin._id?._id || initialSelectedAdmin._id || initialSelectedAdmin)?.toString();
+        const found = chat?.admins?.find(a => (a._id?._id || a._id)?.toString() === adminIdStr);
+        return found || initialSelectedAdmin;
+    });
+
+    useEffect(() => {
+        if (initialSelectedAdmin) {
+            const adminIdStr = (initialSelectedAdmin._id?._id || initialSelectedAdmin._id || initialSelectedAdmin)?.toString();
+            const found = chat?.admins?.find(a => (a._id?._id || a._id)?.toString() === adminIdStr);
+            setSelected(found || initialSelectedAdmin);
+            setScreen('second');
+        }
+    }, [initialSelectedAdmin, chat?.admins]);
+
     const [filtered, setFiltered] = useState([]);
     const [search, setSearch] = useState("");
     const [isSearching, setIsSearching] = useState(false);

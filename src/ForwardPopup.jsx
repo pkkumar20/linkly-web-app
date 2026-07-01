@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { IoMdClose } from "react-icons/io";
 import UserAvatar from './UserAvatar';
 import Lottie from 'lottie-react';
@@ -21,6 +22,40 @@ export default function ForwardPopup({ isOpen, onClose, contacts, onContactClick
         }
     }, [isOpen]);
 
+    const isHistoryPushedRef = useRef(false);
+
+    // Handle history push/pop for browser back button support
+    useEffect(() => {
+        if (isOpen && !isHistoryPushedRef.current) {
+            isHistoryPushedRef.current = true;
+            window.history.pushState(
+                { forwardPopupOpen: true },
+                '',
+                window.location.pathname + window.location.hash
+            );
+        } else if (!isOpen && isHistoryPushedRef.current) {
+            isHistoryPushedRef.current = false;
+            if (window.history.state?.forwardPopupOpen) {
+                window.history.back();
+            }
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (isHistoryPushedRef.current && !e.state?.forwardPopupOpen) {
+                isHistoryPushedRef.current = false;
+                onClose();
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [onClose]);
+
+    const handleClose = useCallback(() => {
+        setSearchQuery("");
+        onClose();
+    }, [onClose]);
     const isSendAllowed = (user) => {
         if (user.contactType === "person") {
             return true;
@@ -56,11 +91,6 @@ export default function ForwardPopup({ isOpen, onClose, contacts, onContactClick
     }, [contacts, searchQuery, backendUser]);
 
     if (!isOpen) return null;
-
-    const handleClose = () => {
-        setSearchQuery("");
-        onClose();
-    };
 
     const formatName = (name) => {
         if (!name) return "";
@@ -114,7 +144,7 @@ export default function ForwardPopup({ isOpen, onClose, contacts, onContactClick
         }
     }
 
-    return (
+    return createPortal(
         <div className="select-none fixed inset-0 z-[2000] flex items-center justify-center bg-black bg-opacity-40 p-2" onClick={handleClose}>
             <div
                 className="relative bg-white rounded-2xl p-4 w-[350px] max-w-full"
@@ -338,6 +368,7 @@ export default function ForwardPopup({ isOpen, onClose, contacts, onContactClick
                 </div>
 
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

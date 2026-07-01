@@ -25,9 +25,9 @@ function JoinGroupCard() {
                 } else {
                     try {
                         const res = await getGroupDetailById(code);
-                        
+
                         if (res.status === 200) {
-                            
+
                             setData(res.data.user);
                             setType(res.data.user.contactType)
                         }
@@ -41,7 +41,7 @@ function JoinGroupCard() {
             if (path.startsWith("/@")) {
                 setType("user");
                 code = path.slice(1);
-                
+
                 if (code.length == 0) {
                     navigate("/");
 
@@ -49,9 +49,9 @@ function JoinGroupCard() {
                     setUserName(code);
                     try {
                         const res = await getUserDetailByUserName(code);
-                        
+
                         if (res.status === 200) {
-                            
+
                             setData(res.data.user);
                             setErr(false);
                         }
@@ -140,6 +140,9 @@ function JoinGroupCard() {
                                     navigate(`/?userID=${data._id}`)
                                 } else if (type == "group") {
                                     navigate(`/?groupId=${data._id}`, { state: { context: data } });
+                                }
+                                else if (type == "channel") {
+                                    navigate(`/?channelId=${data._id}`, { state: { context: data } });
                                 }
 
                             }}

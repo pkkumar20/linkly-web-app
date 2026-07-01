@@ -14,12 +14,13 @@ import { HiMagnifyingGlass } from "react-icons/hi2";
 import { MdOutlineClose, MdOutlineLocalPhone, MdOutlineDeleteOutline } from "react-icons/md";
 import { FiUser, FiCalendar } from "react-icons/fi";
 import { format, isToday, isYesterday, isThisYear } from 'date-fns';
-import { PiLinkSimpleLight } from "react-icons/pi";
+import { PiLinkSimpleLight, PiQrCodeLight } from "react-icons/pi";
 import { BsPeopleFill, BsImages, BsFileEarmark, BsMusicNote } from "react-icons/bs";
 import { AuthContext } from "../firebase hooks/AuthContext";
 import ForwardPopup from "../ForwardPopup";
 import DeleteMultiplePopup from "../DeleteMultiplePopup";
 import DeleteChatPopup from "./DeleteChatPopup";
+import GroupAndChannelQRCodeModal from "../GroupAndChannelQRCodeModal";
 // Persistent cache so optimized thumb URLs are computed once and reused across tab switches
 const thumbCache = new Map();
 const getOptimizedThumbUrl = (url) => {
@@ -79,8 +80,26 @@ import MusicCard from "../MusicCard";
 function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery, onOpenCalendar, selectedUserFilter, setSelectedUserFilter, panelOpen, setPanelOpen }) {
     if (chat === null) return;
 
-    const { contacts, backendUser, deleteSelectedMedia, deleteOneFile } = useContext(AuthContext)
+    const { contacts, backendUser, deleteSelectedMedia, deleteOneFile, deletePerson } = useContext(AuthContext)
+    const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+    const [showDeletePopup, setShowDeletePopup] = useState(false);
     const [isAnimationFinished, setIsAnimationFinished] = useState(false);
+
+    const handleDeleteChat = async (alsoDeleteForOther) => {
+        try {
+            const res = await deletePerson(chat._id, alsoDeleteForOther);
+            if (res && res.status === 200) {
+                toast.success("Chat deleted successfully");
+                setShowDeletePopup(false);
+                if (back) back();
+            } else {
+                toast.error("Failed to delete chat");
+            }
+        } catch (error) {
+            console.error("Error deleting chat:", error);
+            toast.error("Failed to delete chat");
+        }
+    };
 
     useEffect(() => {
         if (!panelOpen) {
@@ -111,38 +130,14 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
 
     useEffect(() => {
         if (isAnimationFinished && sidebarMode === "search" && searchInputRef.current) {
-            searchInputRef.current.focus();
+            // Only auto-focus on desktop to avoid jarring keyboard jump on mobile
+            if (window.innerWidth >= 768) {
+                searchInputRef.current.focus();
+            }
         }
     }, [isAnimationFinished, sidebarMode]);
 
-    const renderChatAvatar = (size = "w-10 h-10") => {
-        if (!chat) return null;
-        if (chat.contactType === "person") {
-            const member = chat.otherMember?.[0]?._id;
-            if (!member) return null;
-            return (
-                <UserAvatar
-                    size={size}
-                    {...(member.profile?.type === 'image' && { image: member.profile.imageUrl })}
-                    {...(member.profile?.type === 'emoji' && { emoji: member.profile.emoji, simpleBg: member.profile.bgColor })}
-                    {...(member.profile?.type === 'initials' && {
-                        simpleBg: member.profile.bgColor,
-                        text: chat.otherMember[0].nickName ? (chat.otherMember[0].nickLastName ? (chat.otherMember[0].nickName[0].toUpperCase() + chat.otherMember[0].nickLastName[0].toUpperCase()) : (chat.otherMember[0].nickName[0].toUpperCase())) : (member.profile.initials),
-                    })}
-                />
-            );
-        }
-        const profile = chat.details?.profile;
-        if (!profile) return null;
-        return (
-            <UserAvatar
-                size={size}
-                {...(profile.type === 'image' && { image: profile.imageUrl })}
-                {...(profile.type === 'emoji' && { emoji: profile.emoji, simpleBg: profile.bgColor })}
-                {...(profile.type === 'initials' && { text: profile.initials, simpleBg: profile.bgColor })}
-            />
-        );
-    };
+
 
     const searchedMessages = useMemo(() => {
         if (!isAnimationFinished || !isSearching) return [];
@@ -236,11 +231,13 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
             const element = document.querySelector(`[data-msg-id="${msgId}"]`);
             if (element) {
                 element.scrollIntoView({ behavior: "smooth", block: "center" });
-                element.classList.add("search-highlight-flash");
-                const timer = setTimeout(() => {
-                    element.classList.remove("search-highlight-flash");
-                }, 1500);
-                return () => clearTimeout(timer);
+                const delayTimer = setTimeout(() => {
+                    element.classList.add("search-highlight-flash");
+                    setTimeout(() => {
+                        element.classList.remove("search-highlight-flash");
+                    }, 2000);
+                }, 400);
+                return () => clearTimeout(delayTimer);
             }
         }
     }, [activeSearchIndex, searchedMessages]);
@@ -395,7 +392,35 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
     const [forwardItem, setForwardItem] = useState(null);
     const [contextMenu, setContextMenu] = useState(null);
     const [selectedItems, setSelectedItems] = useState([]);
+    const isSelectionPushedRef = useRef(false);
 
+    // Push history state when selection mode is active to support browser back button
+    useEffect(() => {
+        if (selectedItems.length > 0 && !isSelectionPushedRef.current) {
+            isSelectionPushedRef.current = true;
+            window.history.pushState(
+                { infoSelectionModeOpen: true },
+                '',
+                window.location.pathname + window.location.hash
+            );
+        } else if (selectedItems.length === 0 && isSelectionPushedRef.current) {
+            isSelectionPushedRef.current = false;
+            if (window.history.state?.infoSelectionModeOpen) {
+                window.history.back();
+            }
+        }
+    }, [selectedItems.length]);
+
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (isSelectionPushedRef.current && !e.state?.infoSelectionModeOpen) {
+                isSelectionPushedRef.current = false;
+                setSelectedItems([]);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
     const isSelectionMode = selectedItems.length > 0;
 
     const toggleSelection = (item) => {
@@ -928,19 +953,19 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                 >
                     <ArrowLeftIcon className="h-6 w-6 text-gray-700" />
                 </button>
-                {chat.contactType == "person" && (
+                {chat.contactType == "person" && chat.otherMember && chat.otherMember[0] && (
                     <div className="div" onClick={() => { setSidebarMode("info"); setPanelOpen(true); }}>
-                        <UserAvatar    {...(chat.otherMember[0]._id !== null && chat.otherMember[0]._id.profile.type === 'image' && {
+                        <UserAvatar    {...(chat.otherMember[0]._id !== null && chat.otherMember[0]._id?.profile?.type === 'image' && {
                             image: chat.otherMember[0]._id.profile
                                 .imageUrl,
                         })}
-                            {...(chat.otherMember[0]._id !== null && chat.otherMember[0]._id.profile.type === 'emoji' && {
+                            {...(chat.otherMember[0]._id !== null && chat.otherMember[0]._id?.profile?.type === 'emoji' && {
                                 emoji: chat.otherMember[0]._id.profile
                                     .emoji,
                                 simpleBg: chat.otherMember[0]._id.profile
                                     .bgColor,
                             })}
-                            {...(chat._id !== null && chat.otherMember[0]._id.profile.type === 'initials' && {
+                            {...(chat._id !== null && chat.otherMember[0]._id?.profile?.type === 'initials' && {
                                 simpleBg: chat.otherMember[0]._id.profile
                                     .bgColor,
                                 text: chat.otherMember[0].nickName ? (chat.otherMember[0].nickLastName ? (chat.otherMember[0].nickName[0].toUpperCase() + chat.otherMember[0].nickLastName[0].toUpperCase()) : (chat.otherMember[0].nickName[0].toUpperCase())) : (chat.otherMember[0]._id.profile
@@ -991,7 +1016,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                 )}
                 <div onClick={() => { setSidebarMode("info"); setPanelOpen(true); }} className="ml-6 flex flex-col">
                     <Typography color="blue-gray" className="select-none font-semibold text-base">
-                        {chat.contactType == "person" && (
+                        {chat.contactType == "person" && chat.otherMember?.[0]?._id && (
                             chat.otherMember[0]._id.name ? (chat.otherMember[0]._id.lastName ? (formatName(chat.otherMember[0]._id.name) + " " + formatName(chat.otherMember[0]._id.lastName)) : (formatName(chat.otherMember[0]._id.name))) : (null)
                         )}
                         {(chat.contactType == "group" || chat.contactType == "channel") && (
@@ -1007,7 +1032,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                         {(chat.contactType == "channel" || chat.contactType == "group") && (
                             chat.members.length > 1 ? (`${chat.members.length} ${chat.contactType == "channel" ? "Subscribers" : "Members"}`) : (`${chat.members.length} ${chat.contactType == "channel" ? "Subscriber" : "Member"}`)
                         )}
-                        {chat.contactType == "person" && (
+                        {chat.contactType == "person" && chat.otherMember?.[0]?._id && (
                             (chat.blockedUserForThisChat && Array.isArray(chat.blockedUserForThisChat) && chat.blockedUserForThisChat.length > 0) ? (
                                 "Last seen a long time ago"
                             ) : (
@@ -1023,7 +1048,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                             setSidebarMode("search");
                             setPanelOpen(true);
                         }}
-                        className="hidden sm:block p-2 rounded-full cursor-pointer hover:bg-gray-200 transition duration-150"
+                        className={`${chat?.contactType === "person" ? "hidden sm:block" : "block"} p-2 rounded-full cursor-pointer hover:bg-gray-200 transition duration-150`}
                     >
                         <HiMagnifyingGlass className="h-6 w-6 text-gray-700" />
                     </button>
@@ -1240,10 +1265,12 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                                                                     const element = document.querySelector(`[data-msg-id="${msg._id}"]`);
                                                                     if (element) {
                                                                         element.scrollIntoView({ behavior: "smooth", block: "center" });
-                                                                        element.classList.add("search-highlight-flash");
                                                                         setTimeout(() => {
-                                                                            element.classList.remove("search-highlight-flash");
-                                                                        }, 1500);
+                                                                            element.classList.add("search-highlight-flash");
+                                                                            setTimeout(() => {
+                                                                                element.classList.remove("search-highlight-flash");
+                                                                            }, 2000);
+                                                                        }, 400);
                                                                     }
                                                                     // Close sidebar and clear search on search result click
                                                                     setPanelOpen(false);
@@ -1337,7 +1364,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                                                 <div className="ml-auto flex items-center gap-2 ">
                                                     <button
                                                         className=" group/delete p-2 rounded-full cursor-pointer hover:bg-red-50 transition duration-50"
-
+                                                        onClick={() => setShowDeletePopup(true)}
                                                     >
                                                         <MdOutlineDeleteOutline className="h-6 w-6 text-red-600" />
                                                     </button>
@@ -1402,22 +1429,38 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
 
                                                 <div className="bg-white">
                                                     {(chat.contactType == "group" || chat.contactType == "channel") && (<List>
-                                                        <ListItem className="flex"
+                                                        <ListItem className="flex items-center justify-between"
                                                             onClick={() => {
                                                                 navigator.clipboard.writeText(`${window.location.host}/+${chat._id}`);
+                                                                toast.dismissAll()
                                                                 toast.success("Link copied")
-                                                            }}>  {/* Add flex explicitly if needed */}
-                                                            <ListItemPrefix className="flex-shrink-0">  {/* Prevent icon shrinking */}
-                                                                <PiLinkSimpleLight size={26} />
-                                                            </ListItemPrefix>
-                                                            <div className="flex flex-col gap-1 min-w-0 flex-1">  {/* min-w-0 + flex-1 */}
-                                                                <Typography className="max-w-[180px] truncate min-w-0 font-normal text-base text-gray-900">
-                                                                    {`${window.location.host}/+${chat._id}`}
-                                                                </Typography>
-                                                                <Typography variant="small" color="gray" className="text-sm max-w-[180px] font-body truncate min-w-0 text-gray-600">
-                                                                    Link
-                                                                </Typography>
+                                                            }}>
+                                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                                <ListItemPrefix className="flex-shrink-0">
+                                                                    <PiLinkSimpleLight size={26} />
+                                                                </ListItemPrefix>
+                                                                <div className="flex flex-col gap-1 min-w-0 flex-1">
+                                                                    <Typography className="max-w-[180px] truncate min-w-0 font-normal text-base text-gray-900">
+                                                                        {`${window.location.host}/+${chat._id}`}
+                                                                    </Typography>
+                                                                    <Typography variant="small" color="gray" className="text-sm max-w-[180px] font-body truncate min-w-0 text-gray-600">
+                                                                        Link
+                                                                    </Typography>
+                                                                </div>
                                                             </div>
+                                                            <ListItemSuffix className="flex-shrink-0">
+                                                                <div
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+
+
+                                                                        setIsQrModalOpen(true);
+                                                                    }}
+                                                                    className="p-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer text-gray-600 hover:text-gray-900"
+                                                                >
+                                                                    <PiQrCodeLight size={32} />
+                                                                </div>
+                                                            </ListItemSuffix>
                                                         </ListItem>
 
                                                     </List>)}
@@ -1600,7 +1643,7 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                                                                                                 </span>
                                                                                             </div>
                                                                                         </div>
-                                                                                        <ListItemSuffix>{getRoll(member._id)}</ListItemSuffix>
+                                                                                        {getRoll(member._id) && <ListItemSuffix>{getRoll(member._id)}</ListItemSuffix>}
                                                                                     </ListItem>
                                                                                 ))}
                                                                             </List>
@@ -2074,7 +2117,14 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                     profilePicture={chat.contactType === "person" ? chat.otherMember[0]._id.profile : chat.details.profile}
                 />
             )}
+            {isQrModalOpen && (
 
+                <GroupAndChannelQRCodeModal
+                    isOpen={isQrModalOpen}
+                    onClose={() => setIsQrModalOpen(false)}
+                    chat={chat}
+                />
+            )}
             {/* Context Menu portal */}
             {contextMenu && (
                 <>
@@ -2143,6 +2193,15 @@ function ChatInfo({ chat, back, choose, messages, isNavbarHidden, setSearchQuery
                     </div>
                 </>
             )}
+            <AnimatePresence>
+                {showDeletePopup && (
+                    <DeleteChatPopup
+                        onClose={() => setShowDeletePopup(false)}
+                        onDelete={handleDeleteChat}
+                        chat={chat}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -2199,8 +2258,6 @@ function LogoutPopover({ onSearchClick, chat, back, choose }) {
         };
     }, [open]);
 
-    if (chat?.contactType !== "person") return null;
-
     const isBlockedByMe = () => {
         if (chat && chat.contactType === 'person' && chat.blockedUserForThisChat && Array.isArray(chat.blockedUserForThisChat)) {
             const otherId = chat.otherMember?.[0]?._id?._id || chat.otherMember?.[0]?._id;
@@ -2251,96 +2308,108 @@ function LogoutPopover({ onSearchClick, chat, back, choose }) {
     };
 
     return (
-        <div className="relative flex justify-end">
-            <button
-                className="p-2 rounded-full cursor-pointer hover:bg-gray-200 transition duration-150"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setOpen(!open);
-                }}
-            >
-                <EllipsisVerticalIcon className="h-6 w-6 text-gray-700" />
-            </button>
+        <>
+            {chat.contactType === "person" && (<div className="relative flex justify-end">
+                <button
+                    className="p-2 rounded-full cursor-pointer hover:bg-gray-200 transition duration-150"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setOpen(!open);
+                    }}
+                >
+                    <EllipsisVerticalIcon className="h-6 w-6 text-gray-700" />
+                </button>
 
-            <AnimatePresence>
-                {open && (
-                    <>
-                        <div
-                            className="fixed inset-0 z-40 bg-transparent"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setOpen(false);
-                            }}
-                        />
-                        <motion.div
-                            initial="hidden"
-                            animate="visible"
-                            exit="hidden"
-                            variants={menuVariants}
-                            className="absolute right-0  top-14 z-50 w-[170px] bg-[#ececea] rounded-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] p-1 flex flex-col gap-0.5 border border-[#d2d3cd]/50"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-
-
-
-
-                            {/* Block user / Unblock user */}
-                            {isBlockedByMe() ? (
-                                <button
-                                    onClick={handleUnBlock}
-                                    className="flex items-center w-full px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-md transition text-left text-gray-900 font-semibold text-[15px] gap-[20px] select-none"
-                                >
-                                    <UnlockIcon className="w-[18px] h-[18px] text-gray-900" />
-                                    <span>Unblock user</span>
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={handleBlock}
-                                    className="flex items-center w-full px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-md transition text-left text-gray-900 font-semibold text-[15px] gap-[20px] select-none"
-                                >
-                                    <LockIcon className="w-[18px] h-[18px] text-gray-900" />
-                                    <span>Block user</span>
-                                </button>
-                            )}
-
-                            <button
+                <AnimatePresence>
+                    {open && (
+                        <>
+                            <div
+                                className="fixed inset-0 z-40 bg-transparent"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setOpen(false);
-                                    if (onSearchClick) onSearchClick();
                                 }}
-                                className="flex sm:hidden items-center w-full px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-md transition text-left text-gray-900 font-semibold text-[15px] gap-[20px] select-none"
+                            />
+                            <motion.div
+                                initial="hidden"
+                                animate="visible"
+                                exit="hidden"
+                                variants={menuVariants}
+                                className="absolute right-0  top-14 z-50 w-[170px] bg-[#ececea] rounded-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] p-1 flex flex-col gap-0.5 border border-[#d2d3cd]/50"
+                                onClick={(e) => e.stopPropagation()}
                             >
-                                <SearchIcon className="w-[18px] h-[18px] text-gray-900" />
-                                <span>Search</span>
-                            </button>
 
-                            {/* Delete Chat */}
-                            <button
-                                onClick={() => {
-                                    setOpen(false);
-                                    setShowDeletePopup(true);
-                                }}
-                                className="flex items-center w-full px-4 py-3 hover:bg-red-500/10 active:bg-red-500/20 rounded-md transition text-left text-[#d32f2f] font-semibold text-[15px] gap-[20px] select-none"
-                            >
-                                <DeleteChatIcon className="w-[18px] h-[18px] text-[#d32f2f]" />
-                                <span>Delete Chat</span>
-                            </button>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
 
-            <AnimatePresence>
-                {showDeletePopup && (
-                    <DeleteChatPopup
-                        onClose={() => setShowDeletePopup(false)}
-                        onDelete={handleDeleteChat}
-                        chat={chat}
-                    />
-                )}
-            </AnimatePresence>
-        </div>
+
+
+                                {/* Block user / Unblock user (Only for person chats) */}
+                                {chat?.contactType === "person" && (
+                                    isBlockedByMe() ? (
+                                        <button
+                                            onClick={handleUnBlock}
+                                            className="flex items-center w-full px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-md transition text-left text-gray-900 font-semibold text-[15px] gap-[20px] select-none"
+                                        >
+                                            <UnlockIcon className="w-[18px] h-[18px] text-gray-900" />
+                                            <span>Unblock user</span>
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={handleBlock}
+                                            className="flex items-center w-full px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-md transition text-left text-gray-900 font-semibold text-[15px] gap-[20px] select-none"
+                                        >
+                                            <LockIcon className="w-[18px] h-[18px] text-gray-900" />
+                                            <span>Block user</span>
+                                        </button>
+                                    )
+                                )}
+
+                                {/* Search (Only for person chats on mobile) */}
+                                {chat?.contactType === "person" && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpen(false);
+                                            if (onSearchClick) onSearchClick();
+                                        }}
+                                        className="flex sm:hidden items-center w-full px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-md transition text-left text-gray-900 font-semibold text-[15px] gap-[20px] select-none"
+                                    >
+                                        <SearchIcon className="w-[18px] h-[18px] text-gray-900" />
+                                        <span>Search</span>
+                                    </button>
+                                )}
+
+                                {/* Delete Chat (Only for person chats) */}
+                                {chat?.contactType === "person" && (
+                                    <button
+                                        onClick={() => {
+                                            setOpen(false);
+                                            setShowDeletePopup(true);
+                                        }}
+                                        className="flex items-center w-full px-4 py-3 hover:bg-red-500/10 active:bg-red-500/20 rounded-md transition text-left text-[#d32f2f] font-semibold text-[15px] gap-[20px] select-none"
+                                    >
+                                        <DeleteChatIcon className="w-[18px] h-[18px] text-[#d32f2f]" />
+                                        <span>Delete Chat</span>
+                                    </button>
+                                )}
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {showDeletePopup && (
+                        <DeleteChatPopup
+                            onClose={() => setShowDeletePopup(false)}
+                            onDelete={handleDeleteChat}
+                            chat={chat}
+                        />
+                    )}
+                </AnimatePresence>
+
+
+            </div>)}
+
+        </>
     );
 }
 

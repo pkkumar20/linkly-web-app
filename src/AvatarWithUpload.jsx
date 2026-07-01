@@ -5,7 +5,7 @@ import { Cropper } from "react-cropper";
 import "cropperjs/dist/cropper.css";
 import Picker from "emoji-picker-react";
 
-// ── Color palette ────────────────────────────────────────────────────────────
+
 const COLOR_OPTIONS = [
     "#ff9a9e", "#1d8fe1", "#625eb1", "#7918f2", "#4801ff", "#44107a", "#ff1361", "#43e97b", "#38f9d7", "#7b54c9",
     "#2af598", "#009efd", "#c471f5", "#fa71cd", "#00c6fb", "#005bea", "#6e45e2", "#7028e4", "#ff0844", "#92fe9d",
@@ -103,6 +103,8 @@ if (typeof document !== "undefined") {
         }
         .ae-crop-panel .cropper-view-box,
         .ae-crop-panel .cropper-face { border-radius:50% !important; }
+        .ae-crop-panel .cropper-view-box { outline: 2px solid #8763ea !important; outline-color: #8763ea !important; }
+        .ae-crop-panel .cropper-point, .ae-crop-panel .cropper-line { background-color: #8763ea !important; }
         .ae-crop-panel .cropper-container { border-radius:16px; overflow:hidden; }
         .ae-crop-panel .cropper-modal { background:rgba(255,255,255,0.6) !important; }
 
@@ -192,7 +194,7 @@ if (typeof document !== "undefined") {
         .ae-confirm-fab {
             position:absolute; bottom:28px; right:28px; z-index:10;
             width:56px; height:56px; border-radius:50%; border:none;
-            background:linear-gradient(135deg, #4f8ef7 0%, #6c63ff 100%);
+            background:#8763ea;
             color:#fff; cursor:pointer;
             display:flex; align-items:center; justify-content:center;
             box-shadow:0 6px 24px rgba(79,142,247,0.35);
@@ -509,9 +511,7 @@ function AvatarEditorFullPage({
     );
 }
 
-// ════════════════════════════════════════════════════════════════════════════════
-// Main component (same prop interface as before)
-// ════════════════════════════════════════════════════════════════════════════════
+
 export default function AvatarWithCropCircle({
     disabled,
     profileType,

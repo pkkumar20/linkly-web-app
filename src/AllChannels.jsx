@@ -80,6 +80,7 @@ function AllChannels({ Choose, inputRef }) {
             const res = await joinChannelAgain(fd);
             if (res && res.status === 200) {
                 toast.success("Joined channel again successfully!");
+                setLeftOwnedChannels(prev => prev.filter(c => c._id !== channelId));
             } else {
                 toast.error("Failed to join channel");
             }

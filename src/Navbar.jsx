@@ -109,7 +109,7 @@ const ContactListItem = React.memo(function ContactListItem({
       className={`flex justify-between items-center ${selectedClass}`}
     >
       {/* Left side - Icon + Text */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3" >
         <ListItemPrefix>
           <UserAvatar {...avatarProps} />
         </ListItemPrefix>
@@ -633,10 +633,10 @@ export default function Navbar({ Choose, ChatsData, SelectedChat }) {
   useEffect(() => {
     if (contacts.length !== 0 && backendUser != null) {
       // Suppose `contacts` is the array received from the backend
-      
+
 
       const processedContacts = contacts.map(contact => {
-        
+
         const otherMembers = contact.members?.filter(
           member => member._id._id !== backendUser._id
         );

@@ -116,6 +116,14 @@ export default function LocationViewer({ msg, onClose }) {
                         }
                     });
 
+                    if (map && typeof map.on === 'function') {
+                        map.on("styleimagemissing", (e) => {
+                            if (map && typeof map.hasImage === 'function' && !map.hasImage(e.id)) {
+                                map.addImage(e.id, { width: 1, height: 1, data: new Uint8Array(4) });
+                            }
+                        });
+                    }
+
                     map.on("load", () => {
                         if (!isMounted) return;
                         mapRef.current = map;

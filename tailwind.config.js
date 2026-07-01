@@ -4,7 +4,6 @@ module.exports = withMT({
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    "./node_modules/flyonui/dist/js/*.js",
   ],
   theme: {
     extend: {

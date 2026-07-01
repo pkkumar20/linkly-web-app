@@ -182,24 +182,129 @@ export default function ProfileQRCodeModal({ isOpen, onClose }) {
     const [isSendingOnLinkly, setIsSendingOnLinkly] = useState(false);
     const contactSearchRef = useRef(null);
 
+    const isQrPushedRef = useRef(false);
+    const isSharePushedRef = useRef(false);
+    const isPickerPushedRef = useRef(false);
+
+    // Main Modal History Management
     useEffect(() => {
         if (isOpen) {
             const timer = setTimeout(() => setIsVisible(true), 10);
+            if (!isQrPushedRef.current) {
+                isQrPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState(
+                    { ...window.history.state, profileQrModalOpen: true, modalDepth: currentDepth + 1 },
+                    '',
+                    window.location.pathname + window.location.hash
+                );
+            }
             return () => clearTimeout(timer);
         } else {
+            if (isQrPushedRef.current) {
+                isQrPushedRef.current = false;
+                if (window.history.state?.profileQrModalOpen) {
+                    window.history.back();
+                }
+            }
             setIsVisible(false);
             const timer = setTimeout(() => {
                 setStep("select");
+                setShowContactPicker(false);
                 setCopied(false);
             }, 300);
             return () => clearTimeout(timer);
         }
     }, [isOpen]);
 
+    // Sub-Screen History Management (Share Screen)
+    useEffect(() => {
+        if (step === "share") {
+            if (!isSharePushedRef.current) {
+                isSharePushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState(
+                    { ...window.history.state, profileQrShareSubScreen: true, modalDepth: currentDepth + 1 },
+                    '',
+                    window.location.pathname + window.location.hash
+                );
+            }
+        } else {
+            if (isSharePushedRef.current) {
+                isSharePushedRef.current = false;
+                if (window.history.state?.profileQrShareSubScreen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [step]);
+
+    // Sub-Screen History Management (Contact Picker)
+    useEffect(() => {
+        if (showContactPicker) {
+            if (!isPickerPushedRef.current) {
+                isPickerPushedRef.current = true;
+                const currentDepth = window.history.state?.modalDepth || 0;
+                window.history.pushState(
+                    { ...window.history.state, profileQrPickerOpen: true, modalDepth: currentDepth + 1 },
+                    '',
+                    window.location.pathname + window.location.hash
+                );
+            }
+        } else {
+            if (isPickerPushedRef.current) {
+                isPickerPushedRef.current = false;
+                if (window.history.state?.profileQrPickerOpen) {
+                    window.history.back();
+                }
+            }
+        }
+    }, [showContactPicker]);
+
     const handleClose = useCallback(() => {
         setIsVisible(false);
+        if (isPickerPushedRef.current && window.history.state?.profileQrPickerOpen) {
+            isPickerPushedRef.current = false;
+            window.history.back();
+        }
+        if (isSharePushedRef.current && window.history.state?.profileQrShareSubScreen) {
+            isSharePushedRef.current = false;
+            window.history.back();
+        }
+        if (isQrPushedRef.current && window.history.state?.profileQrModalOpen) {
+            isQrPushedRef.current = false;
+            window.history.back();
+        }
         setTimeout(onClose, 300);
     }, [onClose]);
+
+    // Listen to browser/mobile back button (popstate)
+    useEffect(() => {
+        const handlePopState = (e) => {
+            if (showContactPicker && !e.state?.profileQrPickerOpen) {
+                window._linklyModalPopped = true;
+                isPickerPushedRef.current = false;
+                setShowContactPicker(false);
+                return;
+            }
+            if (step === "share" && !e.state?.profileQrShareSubScreen) {
+                window._linklyModalPopped = true;
+                isSharePushedRef.current = false;
+                setStep("select");
+                return;
+            }
+            if (isOpen && !e.state?.profileQrModalOpen) {
+                window._linklyModalPopped = true;
+                isQrPushedRef.current = false;
+                isSharePushedRef.current = false;
+                isPickerPushedRef.current = false;
+                setIsVisible(false);
+                setTimeout(onClose, 300);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [isOpen, step, showContactPicker, onClose]);
 
     const profileUrl = `${window.location.origin}/${backendUser?._id}`;
 

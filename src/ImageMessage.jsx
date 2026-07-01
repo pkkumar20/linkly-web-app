@@ -176,6 +176,7 @@ const ImageMessage = memo(({ choose, msg, chat, images, isPending, senderName, i
     const hasCaption = caption && caption.trim().length > 0;
     const isError = msg?._isError;
 
+
     const renderTextWithLinks = (textContent) => {
         if (!textContent) return null;
         const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9.-]+\.(?:com|org|net|edu|gov|in|co|us|uk|io|me|app|dev|ai)(?:\/[^\s]*)?)/gi;
@@ -201,19 +202,7 @@ const ImageMessage = memo(({ choose, msg, chat, images, isPending, senderName, i
     const prevImagesKey = useRef(null);
     const imagesKey = images.map(img => img._id || img.url).join(',');
     if (!lockedUrls.current || prevImagesKey.current !== imagesKey) {
-        const oldUrlMap = new Map();
-        if (prevImagesRef.current && lockedUrls.current) {
-            prevImagesRef.current.forEach((oldImg, i) => {
-                const key = oldImg._id || oldImg.url;
-                if (key && lockedUrls.current[i]) oldUrlMap.set(key.toString(), lockedUrls.current[i]);
-            });
-        }
-        lockedUrls.current = images.map((img) => {
-            const key = img._id || img.url;
-            const oldUrl = key ? oldUrlMap.get(key.toString()) : null;
-            if (oldUrl?.startsWith('blob:') && img.url && !img.url.startsWith('blob:')) return oldUrl;
-            return img.url;
-        });
+        lockedUrls.current = images.map((img) => img.url);
         prevImagesRef.current = images;
         prevImagesKey.current = imagesKey;
     }
@@ -322,9 +311,9 @@ const ImageMessage = memo(({ choose, msg, chat, images, isPending, senderName, i
         const isLoaded = loaded[0] || isBlob;
         const dim = dims[0];
 
-        const MAX_W = 380;
-        const MAX_H = 460;
-        let containerStyle = { maxWidth: MAX_W, maxHeight: MAX_H, aspectRatio: '3/4' };
+        const MAX_W = 300;
+        const MAX_H = 400;
+        let containerStyle = { maxWidth: MAX_W, maxHeight: MAX_H, aspectRatio: 'auto' };
         if (dim?.w && dim?.h) {
             const ratio = dim.w / dim.h;
             let finalW = Math.min(dim.w, MAX_W);
@@ -398,7 +387,7 @@ const ImageMessage = memo(({ choose, msg, chat, images, isPending, senderName, i
                         senderName={senderName}
                         senderProfile={senderProfile}
                         sendTime={sendTime}
-                        returnData={(w) => {}}
+                        returnData={(w) => { }}
                     />
                 )}
             </div>
@@ -496,7 +485,7 @@ const ImageMessage = memo(({ choose, msg, chat, images, isPending, senderName, i
                     senderName={senderName}
                     senderProfile={senderProfile}
                     sendTime={sendTime}
-                    returnData={(w) => {}}
+                    returnData={(w) => { }}
                 />
             )}
         </div>
@@ -506,8 +495,9 @@ const ImageMessage = memo(({ choose, msg, chat, images, isPending, senderName, i
     if (prevProps.isPending !== nextProps.isPending) return false;
     if (prevProps.msg?._isError !== nextProps.msg?._isError) return false;
     if (prevProps.senderName !== nextProps.senderName) return false;
-    if (prevProps.images.length !== nextProps.images.length) return false;
-    return prevProps.images.every((img, i) => img.url === nextProps.images[i]?.url);
+    if (prevProps.msg !== nextProps.msg) return false;
+    if (prevProps.images?.length !== nextProps.images?.length) return false;
+    return prevProps.images?.every((img, i) => img.url === nextProps.images[i]?.url);
 });
 
 export default ImageMessage;
