@@ -398,6 +398,24 @@ export default function MediaPreviewPopup({ files = [], source, onClose, onSend,
 
     const isPreviewPushedRef = useRef(false);
 
+    const handleSendRef = useRef();
+    handleSendRef.current = () => {
+        if (!isEditing && !isProcessing) {
+            onSend(fileList, caption);
+        }
+    };
+
+    useEffect(() => {
+        const handleGlobalKeyDown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSendRef.current();
+            }
+        };
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, []);
+
     // Sync preview open state with history to support browser back button
     useEffect(() => {
         if (!isPreviewPushedRef.current) {

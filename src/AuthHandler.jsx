@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "./firebase hooks/AuthContext";
 import IsProfileSetted from "./IsProfileSetted";
-import { Routes, Route, Navigate } from "react-router"
+import { Routes, Route, Navigate, useLocation } from "react-router"
 import Lottie from "lottie-react";
 import myAnimation from "./lottie/Cute Tiger.json";
 import noInternetAnimation from "./lottie/no internet.json";
@@ -9,11 +9,13 @@ import serverErrorAnimation from "./lottie/cat 404.json";
 import Login$Signup from "./Login$Signup";
 import HandleViewInfo from "./HandleViewInfo";
 import DownloadPage from "./DownloadPage";
+import InfoPage from "./InfoPage";
 import toast from "react-hot-toast";
 
 
 function AuthHandler() {
     const { user, loading, isNoInternet, isServerError, getorsetProfile } = useContext(AuthContext);
+    const location = useLocation();
     const [isInviteOrProfileLink, setIsInviteOrProfileLink] = useState(false);
     const [userId, setUserId] = useState(null);
     // useEffect(() => {
@@ -52,8 +54,12 @@ function AuthHandler() {
     // }, []);
 
     // Public routes bypass auth flow entirely
-    if (window.location.pathname === '/download') {
+    if (location.pathname === '/download') {
         return <DownloadPage />;
+    }
+
+    if (location.pathname === '/info') {
+        return <InfoPage />;
     }
 
     if (loading) {
@@ -121,6 +127,7 @@ function AuthHandler() {
 
         <Routes>
             <Route path="/download" element={<DownloadPage />} />
+            <Route path="/info" element={<InfoPage />} />
             <Route path="/" element={user ? <IsProfileSetted /> : <Login$Signup />} />
             <Route path="/:id" element={<HandleViewInfo />} />
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -279,6 +279,14 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
     const contextMenuLeaveTimeout = useRef(null);
     const lastMarkedReadRef = useRef(null);
     const contextClickRef = useRef(null);
+    const inputRef = useRef(null);
+
+    // Auto-focus input when forward data is populated
+    useEffect(() => {
+        if (forwardMessagesData && forwardMessagesData.length > 0 && inputRef.current) {
+            setTimeout(() => inputRef.current.focus(), 50);
+        }
+    }, [forwardMessagesData]);
 
     // ✅ Oldest-first messages (native order). 
     // The CSS flex-direction: column-reverse will physically flip the DOM upside down,
@@ -2632,12 +2640,19 @@ export default function ChatArea({ isChatSelected, back, contactData, choose, au
                                     <BiWinkSmile size={24} />
                                 </button>
                                 <input
+                                    ref={inputRef}
                                     type="text"
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
                                     onPaste={handlePaste}
                                     placeholder={permissions.canSendText ? "Message" : "You can't send text messages"}
                                     disabled={!permissions.canSendText}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            handleSend();
+                                        }
+                                    }}
                                     className={`select-none flex-1 min-w-0 max-w-full text-[15px] outline-none bg-transparent pl-1 ${permissions.canSendText ? 'text-black' : 'text-gray-400 cursor-not-allowed'}`}
                                 />
                                 {permissions.canSendMedia && (

@@ -1,4 +1,5 @@
 import React, { useEffect, useContext } from "react";
+import { useNavigate } from "react-router";
 import {
   IconButton,
   Typography,
@@ -77,7 +78,24 @@ const NotificationIcon = ({ size = 24, className = "" }) => (
     <path d="M10 18v1a2 2 0 104 0v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
   </svg>
 );
+
+const InfoIcon = ({ size = 26, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" fill="none" />
+    <line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <circle cx="12" cy="8" r="1.2" fill="currentColor" />
+  </svg>
+);
+
+const DownloadIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    <polyline points="7 10 12 15 17 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+  </svg>
+);
 export default function Sidebar({ Choose }) {
+  const navigate = useNavigate();
   const [open, setOpen] = React.useState(0);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const { backendUser, getorsetProfile } = useContext(AuthContext);
@@ -222,6 +240,18 @@ export default function Sidebar({ Choose }) {
                 "Notification"
 
               )}
+            </ListItem>
+            <ListItem onClick={() => { closeDrawer(); navigate("/info"); }} className="font-medium">
+              <ListItemPrefix>
+                <InfoIcon size={26} className="text-gray-600" />
+              </ListItemPrefix>
+              Info
+            </ListItem>
+            <ListItem onClick={() => { closeDrawer(); navigate("/download"); }} className="font-medium">
+              <ListItemPrefix>
+                <DownloadIcon size={24} className="text-gray-600" />
+              </ListItemPrefix>
+              Download
             </ListItem>
           </List>
         </Card>
